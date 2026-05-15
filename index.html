@@ -2,216 +2,253 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Uang Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rekap Uang Pro - Full View</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        ::-webkit-scrollbar { width: 0px; background: transparent; }
-        .tab-active { background-color: white; color: #4f46e5; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc;
+            overscroll-behavior-y: contain;
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        
+        .tab-active { background-color: white; color: #4f46e5; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         
         .marquee-container {
             overflow: hidden;
             white-space: nowrap;
-            background: #eef2ff;
-            border-bottom: 1px solid #e0e7ff;
-            padding: 8px 0;
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 10px 0;
             display: flex;
         }
         .marquee-text {
             display: inline-block;
             padding-left: 100%;
-            animation: marquee 25s linear infinite;
-            font-size: 11px;
+            animation: marquee 20s linear infinite;
+            font-size: 12px;
             font-weight: 800;
             text-transform: uppercase;
-            color: #4f46e5;
-            letter-spacing: 1px;
+            color: #6366f1;
+            letter-spacing: 0.5px;
         }
         @keyframes marquee {
             0% { transform: translate(0, 0); }
             100% { transform: translate(-100%, 0); }
         }
+
+        /* Responsive height adjustments for rotated screen */
+        @media (orientation: landscape) and (max-height: 500px) {
+            header { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+            .total-card { padding: 0.75rem !important; }
+            .main-grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+        }
     </style>
 </head>
-<body class="text-gray-800 antialiased h-screen flex justify-center items-start pt-4 sm:pt-6 px-4">
+<body class="text-gray-900 antialiased h-screen flex flex-col overflow-hidden">
 
-    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[95vh] sm:h-[90vh] border border-gray-100">
-        
-        <!-- Header -->
-        <header class="bg-indigo-600 text-white p-5 pb-8 relative">
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <p id="display-date" class="text-[10px] uppercase tracking-widest font-bold opacity-80">Memuat tanggal...</p>
-                    <h1 id="display-time" class="text-3xl font-black tracking-tight">00:00:00</h1>
+    <!-- Header Section -->
+    <header class="bg-indigo-600 text-white p-4 md:p-6 shrink-0 shadow-lg z-10">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex flex-col">
+                <p id="display-date" class="text-[10px] md:text-xs uppercase tracking-widest font-black opacity-70">Memuat...</p>
+                <h1 id="display-time" class="text-2xl md:text-4xl font-black tracking-tighter">00:00:00</h1>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex rounded-xl bg-indigo-700/50 p-1 backdrop-blur-md mr-4">
+                    <button id="tab-pribadi-d" onclick="switchTab('pribadi')" class="px-6 py-2 text-xs font-bold rounded-lg transition-all tab-active">Pribadi</button>
+                    <button id="tab-kantor-d" onclick="switchTab('kantor')" class="px-6 py-2 text-xs font-bold rounded-lg transition-all">Kantor</button>
+                    <button id="tab-laporan-d" onclick="switchTab('laporan')" class="px-6 py-2 text-xs font-bold rounded-lg transition-all">Laporan</button>
                 </div>
-                <button onclick="toggleSettings()" class="p-2 bg-indigo-500 rounded-xl hover:bg-indigo-400 transition-all shadow-lg">
+                <button onclick="toggleSettings()" class="p-3 bg-indigo-500 rounded-2xl hover:bg-indigo-400 transition-all shadow-md active:scale-90">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
                 </button>
             </div>
-            
-            <div class="flex rounded-xl bg-indigo-800/50 p-1 mt-4 backdrop-blur-sm">
-                <button id="tab-pribadi" onclick="switchTab('pribadi')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all tab-active">Pribadi</button>
-                <button id="tab-kantor" onclick="switchTab('kantor')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all">Kantor</button>
-                <button id="tab-laporan" onclick="switchTab('laporan')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all">📊 Laporan</button>
-            </div>
-        </header>
-
-        <!-- Running Text Reminder -->
-        <div class="marquee-container" id="marquee-container">
-            <div class="marquee-text" id="running-text-display">
-                ⚠️ Jangan Lupa Untuk Rekap • Pastikan Semua Transaksi Tercatat Hari Ini
-            </div>
         </div>
 
-        <!-- Main Content -->
-        <div id="main-content" class="flex-1 overflow-y-auto p-5 space-y-6 glass rounded-b-3xl">
-            <!-- Saldo Dashboard -->
-            <section class="grid grid-cols-2 gap-4">
-                <div class="col-span-2 bg-gradient-to-br from-indigo-500 to-purple-600 p-5 rounded-2xl text-white shadow-xl">
-                    <p class="text-[10px] font-bold uppercase opacity-80 mb-1">Total Saldo Tersedia</p>
-                    <h2 id="sum-saldo" class="text-3xl font-black">Rp. 0</h2>
-                </div>
-                <div class="bg-white border border-green-100 p-4 rounded-2xl shadow-sm">
-                    <p class="text-[10px] text-green-600 font-black uppercase mb-1">Masuk (Bulan Ini)</p>
-                    <h3 id="sum-masuk" class="text-lg font-bold text-green-700">Rp. 0</h3>
-                </div>
-                <div class="bg-white border border-red-100 p-4 rounded-2xl shadow-sm">
-                    <p class="text-[10px] text-red-600 font-black uppercase mb-1">Keluar (Bulan Ini)</p>
-                    <h3 id="sum-keluar" class="text-lg font-bold text-red-700">Rp. 0</h3>
-                </div>
-            </section>
-
-            <!-- Form Input -->
-            <section class="bg-gray-50/50 p-5 rounded-2xl border border-gray-200">
-                <div class="flex space-x-3 mb-4">
-                    <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="flow" value="keluar" class="peer sr-only" onchange="updateOptions()" checked>
-                        <div class="text-center py-2.5 rounded-xl border-2 border-gray-200 peer-checked:bg-red-500 peer-checked:text-white peer-checked:border-red-500 text-[10px] font-black transition-all text-gray-500">KELUAR</div>
-                    </label>
-                    <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="flow" value="masuk" class="peer sr-only" onchange="updateOptions()">
-                        <div class="text-center py-2.5 rounded-xl border-2 border-gray-200 peer-checked:bg-green-500 peer-checked:text-white peer-checked:border-green-500 text-[10px] font-black transition-all text-gray-500">MASUK</div>
-                    </label>
-                </div>
-
-                <div class="grid grid-cols-1 gap-3">
-                    <div class="relative">
-                        <input type="text" id="input-amount" inputmode="decimal" oninput="handleMathInput(this)" onkeyup="handleEnter(event)" placeholder="0" class="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-100 rounded-xl text-xl font-black text-gray-800 focus:border-indigo-500 outline-none">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Rp</span>
-                        <div id="math-preview" class="absolute -bottom-4 right-2 text-[10px] font-bold text-indigo-500 italic"></div>
-                    </div>
-
-                    <div class="flex gap-2">
-                        <select id="input-source" class="w-1/3 p-3 bg-white border-2 border-gray-100 rounded-xl text-xs font-bold outline-none">
-                            <option value="CASH">💵 CASH</option>
-                            <option value="BCA">💳 BCA</option>
-                            <option value="BRI">💳 BRI</option>
-                            <option value="BANK JATIM">💳 JATIM</option>
-                        </select>
-                        <select id="select-desc" onchange="toggleManualDesc()" class="w-2/3 p-3 bg-white border-2 border-gray-100 rounded-xl text-xs font-bold outline-none"></select>
-                    </div>
-                    <input type="text" id="input-desc-manual" onkeyup="handleEnter(event)" placeholder="Keterangan..." class="hidden w-full p-3 bg-white border-2 border-gray-100 rounded-xl text-xs font-bold outline-none">
-                    
-                    <button onclick="saveData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl text-sm shadow-xl transition-all active:scale-95">SIMPAN</button>
-                    <p id="sync-status" class="text-[9px] text-center text-gray-400 font-bold mt-2"></p>
-                </div>
-            </section>
-
-            <!-- History -->
-            <section>
-                <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Riwayat Transaksi</h2>
-                <div id="list-history" class="space-y-3 pb-8"></div>
-            </section>
+        <!-- Mobile Tabs (Visible on small screens) -->
+        <div class="sm:hidden flex rounded-xl bg-indigo-800/40 p-1 mt-4">
+            <button id="tab-pribadi-m" onclick="switchTab('pribadi')" class="flex-1 py-2.5 text-[10px] font-black rounded-lg transition-all tab-active uppercase">Pribadi</button>
+            <button id="tab-kantor-m" onclick="switchTab('kantor')" class="flex-1 py-2.5 text-[10px] font-black rounded-lg transition-all uppercase">Kantor</button>
+            <button id="tab-laporan-m" onclick="switchTab('laporan')" class="flex-1 py-2.5 text-[10px] font-black rounded-lg transition-all uppercase">Laporan</button>
         </div>
+    </header>
 
-        <!-- Laporan View -->
-        <div id="report-content" class="hidden flex-1 overflow-y-auto p-5 space-y-6 glass rounded-b-3xl">
-            <h2 class="text-xl font-black text-indigo-700">Laporan Saya</h2>
-            
-            <div class="bg-white p-5 rounded-2xl border-2 border-indigo-50 shadow-sm space-y-4">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-sm font-black text-indigo-600 uppercase tracking-tighter">💼 Laporan Pribadi</h3>
-                    <button onclick="downloadPDF('pribadi')" class="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-bold rounded-lg hover:bg-indigo-700 transition-colors">Export PDF</button>
-                </div>
-                <div id="report-summary-pribadi" class="grid grid-cols-2 gap-3"></div>
-            </div>
-
-            <div class="bg-white p-5 rounded-2xl border-2 border-purple-50 shadow-sm space-y-4">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-sm font-black text-purple-600 uppercase tracking-tighter">🏢 Laporan Kantor</h3>
-                    <button onclick="downloadPDF('kantor')" class="px-3 py-1.5 bg-purple-600 text-white text-[10px] font-bold rounded-lg hover:bg-purple-700 transition-colors">Export PDF</button>
-                </div>
-                <div id="report-summary-kantor" class="grid grid-cols-2 gap-3"></div>
-            </div>
-
-            <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                <h3 class="text-[10px] font-black text-gray-400 uppercase mb-4">Detail Saldo Per Akun</h3>
-                <div id="account-balances" class="grid grid-cols-2 gap-4"></div>
-            </div>
-        </div>
-
-        <!-- Settings View -->
-        <div id="settings-content" class="hidden flex-1 overflow-y-auto p-6 space-y-6 glass rounded-b-3xl">
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-black text-indigo-600">Pengaturan</h2>
-                <button onclick="toggleSettings()" class="text-xs font-bold bg-gray-100 px-3 py-1 rounded-lg">Tutup</button>
-            </div>
-            
-            <div class="space-y-5">
-                <!-- Running Text Editor -->
-                <div class="p-4 bg-indigo-50 rounded-2xl space-y-2">
-                    <p class="text-[10px] font-black text-indigo-500 uppercase">Edit Teks Berjalan</p>
-                    <textarea id="setting-running-text" oninput="updateRunningText(this.value)" placeholder="Ketik pesan pengingat di sini..." class="w-full p-3 rounded-xl text-xs font-medium border-none focus:ring-2 focus:ring-indigo-300 min-h-[80px]"></textarea>
-                    <p class="text-[8px] text-indigo-400 italic font-bold">*Teks akan otomatis berjalan di layar utama</p>
-                </div>
-
-                <div class="p-4 bg-gray-50 rounded-2xl space-y-3">
-                    <p class="text-[10px] font-black text-gray-400 uppercase">Set Saldo Awal</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="space-y-1">
-                            <label class="text-[9px] font-bold text-gray-400 ml-1">Cash</label>
-                            <input type="number" id="start-cash" onchange="saveBalances()" class="w-full p-2 rounded-lg text-xs border border-gray-200">
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-[9px] font-bold text-gray-400 ml-1">BCA</label>
-                            <input type="number" id="start-bca" onchange="saveBalances()" class="w-full p-2 rounded-lg text-xs border border-gray-200">
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-[9px] font-bold text-gray-400 ml-1">BRI</label>
-                            <input type="number" id="start-bri" onchange="saveBalances()" class="w-full p-2 rounded-lg text-xs border border-gray-200">
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-[9px] font-bold text-gray-400 ml-1">Bank Jatim</label>
-                            <input type="number" id="start-jatim" onchange="saveBalances()" class="w-full p-2 rounded-lg text-xs border border-gray-200">
-                        </div>
-                    </div>
-                </div>
-
-                <button onclick="clearAll()" class="w-full py-4 text-red-500 font-black text-[10px] bg-red-50 rounded-xl hover:bg-red-100 transition-colors">HAPUS SEMUA DATA APLIKASI</button>
-            </div>
+    <!-- Marquee -->
+    <div class="marquee-container shrink-0">
+        <div class="marquee-text" id="running-text-display">
+            ⚠️ Pastikan semua transaksi hari ini sudah masuk rekapan • Cek saldo berkala
         </div>
     </div>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 overflow-hidden relative">
+        <div id="scroll-area" class="h-full overflow-y-auto px-4 py-6">
+            <div class="max-w-6xl mx-auto main-grid grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Side: Input & Stats -->
+                <div id="input-section" class="lg:col-span-5 xl:col-span-4 space-y-6">
+                    <!-- Dashboard Cards -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="col-span-2 total-card bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 rounded-3xl text-white shadow-xl">
+                            <p class="text-[10px] font-black uppercase opacity-70 mb-1">Estimasi Total Saldo</p>
+                            <h2 id="sum-saldo" class="text-3xl md:text-4xl font-black tracking-tight">Rp 0</h2>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                            <p class="text-[9px] text-green-500 font-black uppercase mb-1">Pemasukan</p>
+                            <h3 id="sum-masuk" class="text-base font-bold text-slate-800">Rp 0</h3>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                            <p class="text-[9px] text-red-500 font-black uppercase mb-1">Pengeluaran</p>
+                            <h3 id="sum-keluar" class="text-base font-bold text-slate-800">Rp 0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Input Form -->
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                        <div class="flex p-1 bg-slate-100 rounded-2xl">
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="flow" value="keluar" class="peer sr-only" onchange="updateOptions()" checked>
+                                <div class="text-center py-3 rounded-xl peer-checked:bg-white peer-checked:text-red-600 peer-checked:shadow-sm text-[11px] font-black transition-all text-slate-500 uppercase">Keluar</div>
+                            </label>
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="flow" value="masuk" class="peer sr-only" onchange="updateOptions()">
+                                <div class="text-center py-3 rounded-xl peer-checked:bg-white peer-checked:text-green-600 peer-checked:shadow-sm text-[11px] font-black transition-all text-slate-500 uppercase">Masuk</div>
+                            </label>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="relative group">
+                                <input type="text" id="input-amount" inputmode="decimal" oninput="handleMathInput(this)" onkeyup="handleEnter(event)" placeholder="0" class="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-2xl text-2xl font-black text-slate-900 outline-none transition-all">
+                                <span class="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black text-lg">Rp</span>
+                                <div id="math-preview" class="absolute -bottom-2 right-4 text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full"></div>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <select id="input-source" class="w-1/3 p-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-xl text-xs font-black outline-none transition-all">
+                                    <option value="CASH">💵 CASH</option>
+                                    <option value="BCA">💳 BCA</option>
+                                    <option value="BRI">💳 BRI</option>
+                                    <option value="BANK JATIM">💳 JATIM</option>
+                                </select>
+                                <select id="select-desc" onchange="toggleManualDesc()" class="w-2/3 p-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-xl text-xs font-black outline-none transition-all"></select>
+                            </div>
+
+                            <input type="text" id="input-desc-manual" onkeyup="handleEnter(event)" placeholder="Ketik keterangan di sini..." class="hidden w-full p-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-xl text-xs font-black outline-none transition-all">
+                            
+                            <button onclick="saveData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-2xl text-sm shadow-lg shadow-indigo-200 transition-all active:scale-95">SIMPAN TRANSAKSI</button>
+                            <p id="sync-status" class="text-[10px] text-center text-slate-400 font-bold"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side: History -->
+                <div id="history-section" class="lg:col-span-7 xl:col-span-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest">Riwayat Aktivitas</h2>
+                        <span id="entry-count" class="text-[10px] font-black bg-slate-200 text-slate-600 px-2 py-1 rounded-md">0 Entri</span>
+                    </div>
+                    <div id="list-history" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
+                        <!-- History Items Generated Here -->
+                    </div>
+                </div>
+
+                <!-- Report View (Hidden initially) -->
+                <div id="report-view" class="hidden col-span-full space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-indigo-50">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-lg font-black text-indigo-600 uppercase">📊 Rekap Pribadi</h3>
+                                <button onclick="downloadPDF('pribadi')" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black">EXPORT PDF</button>
+                            </div>
+                            <div id="report-summary-pribadi" class="grid grid-cols-2 gap-4"></div>
+                        </div>
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-purple-50">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-lg font-black text-purple-600 uppercase">🏢 Rekap Kantor</h3>
+                                <button onclick="downloadPDF('kantor')" class="bg-purple-600 text-white px-4 py-2 rounded-xl text-[10px] font-black">EXPORT PDF</button>
+                            </div>
+                            <div id="report-summary-kantor" class="grid grid-cols-2 gap-4"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-900 p-8 rounded-3xl text-white">
+                        <h3 class="text-xs font-black text-slate-400 uppercase mb-6">Distribusi Saldo Per Akun</h3>
+                        <div id="account-balances" class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal Layer -->
+        <div id="settings-overlay" class="hidden absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
+                    <h2 class="text-xl font-black text-slate-800">Pengaturan Aplikasi</h2>
+                    <button onclick="toggleSettings()" class="p-2 hover:bg-slate-100 rounded-full transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-8 overflow-y-auto space-y-8">
+                    <!-- Marquee Editor -->
+                    <div class="space-y-3">
+                        <label class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Konten Teks Berjalan</label>
+                        <textarea id="setting-running-text" oninput="updateRunningText(this.value)" class="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl text-sm font-medium outline-none h-24" placeholder="Ketik pesan pengingat di sini..."></textarea>
+                    </div>
+
+                    <!-- Balance Editor -->
+                    <div class="space-y-4">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Input Saldo Awal (Saldo Sekarang)</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 ml-1">KAS TUNAI</span>
+                                <input type="number" id="start-cash" onchange="saveBalances()" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none">
+                            </div>
+                            <div class="space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 ml-1">BANK BCA</span>
+                                <input type="number" id="start-bca" onchange="saveBalances()" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none">
+                            </div>
+                            <div class="space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 ml-1">BANK BRI</span>
+                                <input type="number" id="start-bri" onchange="saveBalances()" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none">
+                            </div>
+                            <div class="space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 ml-1">BANK JATIM</span>
+                                <input type="number" id="start-jatim" onchange="saveBalances()" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 border-t border-slate-100">
+                        <button onclick="clearAll()" class="w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black text-[11px] hover:bg-red-100 transition-all uppercase tracking-widest">Reset Ulang Semua Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKWnWGwyxEFgXGmlXZdDxZgIh9IGLiBS-_Grk8eb2wDaZeWnPBxXy_bRYQBvBi0dR6iw/exec';
 
         let currentTab = 'pribadi';
-        let entries = JSON.parse(localStorage.getItem('rekap_v6_data')) || [];
-        let startBals = JSON.parse(localStorage.getItem('rekap_v6_start')) || { CASH: 0, BCA: 0, BRI: 0, JATIM: 0 };
-        let runningText = localStorage.getItem('rekap_v6_marquee') || "⚠️ Jangan Lupa Untuk Rekap • Pastikan Semua Transaksi Tercatat Hari Ini • Cek Saldo BCA, BRI, dan Cash Anda";
+        let entries = JSON.parse(localStorage.getItem('rekap_v_full_data')) || [];
+        let startBals = JSON.parse(localStorage.getItem('rekap_v_full_start')) || { CASH: 0, BCA: 0, BRI: 0, JATIM: 0 };
+        let runningText = localStorage.getItem('rekap_v_full_marquee') || "Selamat datang di Rekap Uang Pro • Selalu catat pengeluaran Anda hari ini agar keuangan tetap terpantau dengan baik • Semangat bekerja!";
         
         const config = {
-            pribadi: "Makan, Bensin, Parkir, Belanja, Pulsa, Listrik",
-            kantorIn: "Invoice, Gaji, Refund, Bonus",
-            kantorOut: "GB, Primamax, Warna, Pak Burhan, GFBABAT, IndahPrint, QueenDistro"
+            pribadi: "Makan, Bensin, Parkir, Belanja, Pulsa, Listrik, Sedekah, Hiburan",
+            kantorIn: "Invoice, Gaji, Refund, Bonus, Penjualan",
+            kantorOut: "GB, Primamax, Warna, Pak Burhan, GFBABAT, IndahPrint, QueenDistro, ATK, Maintenance"
         };
 
         function updateClock() {
@@ -225,10 +262,9 @@
         function formatNumber(num) { return new Intl.NumberFormat('id-ID').format(num); }
         function handleEnter(e) { if (e.key === "Enter") saveData(); }
 
-        // Fungsi Update Running Text
         function updateRunningText(val) {
             runningText = val;
-            localStorage.setItem('rekap_v6_marquee', val);
+            localStorage.setItem('rekap_v_full_marquee', val);
             document.getElementById('running-text-display').innerText = val;
         }
 
@@ -238,7 +274,7 @@
             if (/[+\-*/]/.test(val)) {
                 try {
                     const res = eval(val);
-                    if (res) preview.innerText = "= " + formatNumber(res);
+                    if (res !== undefined && res !== null) preview.innerText = "= " + formatNumber(res);
                 } catch (e) { preview.innerText = ""; }
                 input.value = val;
             } else {
@@ -249,32 +285,37 @@
 
         function switchTab(tab) {
             currentTab = tab;
+            // Update UI for both mobile and desktop tabs
             ['pribadi', 'kantor', 'laporan'].forEach(t => {
-                document.getElementById('tab-' + t).className = tab === t ? "flex-1 py-2 text-xs font-bold rounded-lg tab-active text-indigo-600" : "flex-1 py-2 text-xs font-bold rounded-lg";
+                const btnD = document.getElementById('tab-' + t + '-d');
+                const btnM = document.getElementById('tab-' + t + '-m');
+                if (tab === t) {
+                    btnD.classList.add('tab-active');
+                    btnM.classList.add('tab-active');
+                } else {
+                    btnD.classList.remove('tab-active');
+                    btnM.classList.remove('tab-active');
+                }
             });
-            document.getElementById('main-content').classList.toggle('hidden', tab === 'laporan');
-            document.getElementById('report-content').classList.toggle('hidden', tab !== 'laporan');
-            document.getElementById('settings-content').classList.add('hidden');
-            if (tab === 'laporan') renderReport(); else { updateOptions(); render(); }
+
+            const isLaporan = tab === 'laporan';
+            document.getElementById('input-section').classList.toggle('hidden', isLaporan);
+            document.getElementById('history-section').classList.toggle('hidden', isLaporan);
+            document.getElementById('report-view').classList.toggle('hidden', !isLaporan);
+            
+            if (isLaporan) renderReport(); else { updateOptions(); render(); }
+            document.getElementById('scroll-area').scrollTo(0, 0);
         }
 
         function toggleSettings() {
-            const el = document.getElementById('settings-content');
-            const main = document.getElementById('main-content');
-            const report = document.getElementById('report-content');
-            
-            el.classList.toggle('hidden');
-            if (!el.classList.contains('hidden')) {
-                main.classList.add('hidden');
-                report.classList.add('hidden');
+            const overlay = document.getElementById('settings-overlay');
+            overlay.classList.toggle('hidden');
+            if (!overlay.classList.contains('hidden')) {
                 document.getElementById('start-cash').value = startBals.CASH;
                 document.getElementById('start-bca').value = startBals.BCA;
                 document.getElementById('start-bri').value = startBals.BRI;
                 document.getElementById('start-jatim').value = startBals.JATIM;
                 document.getElementById('setting-running-text').value = runningText;
-            } else {
-                if (currentTab === 'laporan') report.classList.remove('hidden');
-                else main.classList.remove('hidden');
             }
         }
 
@@ -283,7 +324,7 @@
             startBals.BCA = parseFloat(document.getElementById('start-bca').value) || 0;
             startBals.BRI = parseFloat(document.getElementById('start-bri').value) || 0;
             startBals.JATIM = parseFloat(document.getElementById('start-jatim').value) || 0;
-            localStorage.setItem('rekap_v6_start', JSON.stringify(startBals));
+            localStorage.setItem('rekap_v_full_start', JSON.stringify(startBals));
             render();
         }
 
@@ -303,8 +344,8 @@
         }
 
         async function saveData() {
-            const rawAmount = document.getElementById('input-amount').value.replace(/\./g, '');
-            let amount = 0; try { amount = eval(rawAmount) || 0; } catch(e) { return; }
+            const inputVal = document.getElementById('input-amount').value.replace(/\./g, '');
+            let amount = 0; try { amount = eval(inputVal) || 0; } catch(e) { return; }
             const flow = document.querySelector('input[name="flow"]:checked').value;
             const source = document.getElementById('input-source').value;
             const desc = document.getElementById('select-desc').value === "Lain Lain" ? document.getElementById('input-desc-manual').value : document.getElementById('select-desc').value;
@@ -312,7 +353,8 @@
             if (!amount || !desc) return;
             const entry = { id: Date.now().toString(), date: new Date().toISOString(), type: currentTab, flow: flow === 'masuk' ? 'Masuk' : 'Keluar', source: source, amount: amount, description: desc };
             entries.push(entry);
-            localStorage.setItem('rekap_v6_data', JSON.stringify(entries));
+            localStorage.setItem('rekap_v_full_data', JSON.stringify(entries));
+            
             document.getElementById('input-amount').value = '';
             document.getElementById('input-desc-manual').value = '';
             render();
@@ -321,12 +363,12 @@
 
         async function syncToCloud(data) {
             const status = document.getElementById('sync-status');
-            status.innerText = "⏳ Sinkron...";
+            status.innerText = "⏳ Sedang Sinkron...";
             try {
                 await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
                 status.innerText = "✅ Cloud Tersimpan";
                 setTimeout(() => status.innerText = "", 2000);
-            } catch (err) { status.innerText = "❌ Offline"; }
+            } catch (err) { status.innerText = "❌ Mode Offline"; }
         }
 
         function calculateCurrentBalances() {
@@ -345,19 +387,27 @@
             let inSum = 0, outSum = 0;
             const currentMonth = new Date().getMonth();
 
+            document.getElementById('entry-count').innerText = filtered.length + " Entri";
+
             filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(e => {
                 const isMasuk = e.flow === 'Masuk';
                 if (new Date(e.date).getMonth() === currentMonth) {
                     if (isMasuk) inSum += e.amount; else outSum += e.amount;
                 }
                 const item = document.createElement('div');
-                item.className = "bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center";
+                item.className = "bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center group hover:border-indigo-200 transition-all";
                 item.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="text-[8px] font-black p-2 rounded-lg ${isMasuk ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">${e.source}</div>
-                        <div><p class="text-xs font-black">${e.description}</p><p class="text-[9px] text-gray-400 font-bold">${new Date(e.date).toLocaleDateString()}</p></div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-[9px] font-black w-12 h-12 flex items-center justify-center rounded-2xl ${isMasuk ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">${e.source}</div>
+                        <div>
+                            <p class="text-xs font-black text-slate-800">${e.description}</p>
+                            <p class="text-[9px] text-slate-400 font-bold">${new Date(e.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
                     </div>
-                    <div class="text-right"><p class="text-xs font-black ${isMasuk ? 'text-green-600' : 'text-red-600'}">${isMasuk ? '+' : '-'}${formatNumber(e.amount)}</p><button onclick="deleteItem('${e.id}')" class="text-[8px] font-bold text-gray-300 hover:text-red-400">Hapus</button></div>
+                    <div class="text-right">
+                        <p class="text-sm font-black ${isMasuk ? 'text-green-600' : 'text-red-600'}">${isMasuk ? '+' : '-'}${formatNumber(e.amount)}</p>
+                        <button onclick="deleteItem('${e.id}')" class="text-[9px] font-bold text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">Hapus</button>
+                    </div>
                 `;
                 list.appendChild(item);
             });
@@ -381,33 +431,33 @@
             });
 
             sumPribadi.innerHTML = `
-                <div class="bg-green-50 p-3 rounded-xl"><p class="text-[8px] font-black text-green-400">MASUK</p><p class="text-[11px] font-black text-green-700">Rp ${formatNumber(pIn)}</p></div>
-                <div class="bg-red-50 p-3 rounded-xl"><p class="text-[8px] font-black text-red-400">KELUAR</p><p class="text-[11px] font-black text-red-700">Rp ${formatNumber(pOut)}</p></div>
-                <div class="col-span-2 bg-indigo-50 p-3 rounded-xl"><p class="text-[8px] font-black text-indigo-400">SALDO BERSIH PRIBADI</p><p class="text-sm font-black text-indigo-700">Rp ${formatNumber(pIn - pOut)}</p></div>
+                <div class="bg-slate-50 p-4 rounded-2xl"><p class="text-[9px] font-black text-slate-400">TOTAL MASUK</p><p class="text-base font-black text-green-600">Rp ${formatNumber(pIn)}</p></div>
+                <div class="bg-slate-50 p-4 rounded-2xl"><p class="text-[9px] font-black text-slate-400">TOTAL KELUAR</p><p class="text-base font-black text-red-600">Rp ${formatNumber(pOut)}</p></div>
+                <div class="col-span-2 bg-indigo-50 p-5 rounded-2xl"><p class="text-[9px] font-black text-indigo-400">MARGIN BERSIH</p><p class="text-xl font-black text-indigo-700">Rp ${formatNumber(pIn - pOut)}</p></div>
             `;
 
             sumKantor.innerHTML = `
-                <div class="bg-green-50 p-3 rounded-xl"><p class="text-[8px] font-black text-green-400">MASUK</p><p class="text-[11px] font-black text-green-700">Rp ${formatNumber(kIn)}</p></div>
-                <div class="bg-red-50 p-3 rounded-xl"><p class="text-[8px] font-black text-red-400">KELUAR</p><p class="text-[11px] font-black text-red-700">Rp ${formatNumber(kOut)}</p></div>
-                <div class="col-span-2 bg-purple-50 p-3 rounded-xl"><p class="text-[8px] font-black text-purple-400">SALDO BERSIH KANTOR</p><p class="text-sm font-black text-purple-700">Rp ${formatNumber(kIn - kOut)}</p></div>
+                <div class="bg-slate-50 p-4 rounded-2xl"><p class="text-[9px] font-black text-slate-400">TOTAL MASUK</p><p class="text-base font-black text-green-600">Rp ${formatNumber(kIn)}</p></div>
+                <div class="bg-slate-50 p-4 rounded-2xl"><p class="text-[9px] font-black text-slate-400">TOTAL KELUAR</p><p class="text-base font-black text-red-600">Rp ${formatNumber(kOut)}</p></div>
+                <div class="col-span-2 bg-purple-50 p-5 rounded-2xl"><p class="text-[9px] font-black text-purple-400">MARGIN BERSIH</p><p class="text-xl font-black text-purple-700">Rp ${formatNumber(kIn - kOut)}</p></div>
             `;
 
             const currentBals = calculateCurrentBalances();
             accBals.innerHTML = Object.entries(currentBals).map(([key, val]) => `
-                <div class="border-b border-gray-50 pb-2"><p class="text-[9px] font-bold text-gray-400">${key}</p><p class="text-xs font-black text-gray-700">Rp ${formatNumber(val)}</p></div>
+                <div class="p-2"><p class="text-[10px] font-black text-slate-500 mb-1 uppercase">${key}</p><p class="text-sm font-black text-white">Rp ${formatNumber(val)}</p></div>
             `).join('');
         }
 
         function deleteItem(id) {
-            if (confirm("Hapus transaksi ini?")) {
+            if (confirm("Hapus catatan ini secara permanen?")) {
                 entries = entries.filter(e => e.id !== id);
-                localStorage.setItem('rekap_v6_data', JSON.stringify(entries));
+                localStorage.setItem('rekap_v_full_data', JSON.stringify(entries));
                 render();
             }
         }
 
         function clearAll() {
-            if (confirm("PERINGATAN: Hapus SEMUA data secara permanen?")) {
+            if (confirm("SANGAT PENTING: Tindakan ini akan menghapus semua riwayat dan saldo awal. Lanjutkan?")) {
                 localStorage.clear();
                 location.reload();
             }
@@ -418,14 +468,14 @@
             const doc = new jsPDF();
             const title = type === 'pribadi' ? "LAPORAN KEUANGAN PRIBADI" : "LAPORAN KEUANGAN KANTOR";
             const filteredData = entries.filter(e => e.type === type);
-            doc.setFontSize(16); doc.text(title, 14, 20);
-            doc.setFontSize(10); doc.text("Tanggal Cetak: " + new Date().toLocaleString(), 14, 28);
+            doc.setFontSize(18); doc.text(title, 14, 20);
+            doc.setFontSize(10); doc.text("Dibuat pada: " + new Date().toLocaleString('id-ID'), 14, 28);
             const tableData = filteredData.map(e => [new Date(e.date).toLocaleDateString('id-ID'), e.flow, e.source, e.description, formatNumber(e.amount)]);
-            doc.autoTable({ head: [['Tanggal', 'Arus', 'Sumber', 'Keterangan', 'Nominal (Rp)']], body: tableData, startY: 35, theme: 'striped', headStyles: { fillColor: type === 'pribadi' ? [79, 70, 229] : [147, 51, 234] } });
-            doc.save(`Laporan_${type}_${Date.now()}.pdf`);
+            doc.autoTable({ head: [['Tanggal', 'Arus', 'Sumber', 'Keterangan', 'Nominal (Rp)']], body: tableData, startY: 35, theme: 'grid', headStyles: { fillColor: type === 'pribadi' ? [79, 70, 229] : [147, 51, 234], fontStyle: 'bold' } });
+            doc.save(`Laporan_${type}_${new Date().toISOString().split('T')[0]}.pdf`);
         }
 
-        // Inisialisasi awal
+        // Initialize UI
         document.getElementById('running-text-display').innerText = runningText;
         updateOptions();
         render();
