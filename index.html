@@ -27,6 +27,7 @@
 
         <div class="flex-1 overflow-y-auto p-4 space-y-5">
             
+            <!-- Ringkasan Saldo -->
             <section class="grid grid-cols-2 gap-3">
                 <div class="col-span-2 bg-indigo-50 border border-indigo-100 p-3 rounded-xl">
                     <p class="text-xs text-indigo-600 font-semibold mb-1">Total Saldo (Bulan Ini)</p>
@@ -42,6 +43,7 @@
                 </div>
             </section>
 
+            <!-- Form Input Transaksi -->
             <section class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-sm font-bold text-gray-700">Transaksi Baru</h2>
@@ -82,10 +84,16 @@
                     <button id="btn-submit" onclick="saveData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow-md transition-all active:scale-95">
                         Simpan Data (Enter)
                     </button>
-                    <p id="cloud-status" class="text-[10px] text-center text-gray-500 hidden font-semibold"></p>
+
+                    <!-- Indikator Status Cloud -->
+                    <div id="alert-no-url" class="mt-2 p-2 bg-orange-100 border border-orange-200 rounded text-[10px] text-orange-700 font-semibold text-center hidden">
+                        ⚠️ SCRIPT_URL belum diisi! Data hanya tersimpan di HP ini.
+                    </div>
+                    <p id="cloud-status" class="text-[10px] text-center text-gray-500 hidden font-semibold mt-2"></p>
                 </div>
             </section>
 
+            <!-- Riwayat -->
             <section>
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-sm font-bold text-gray-700">Riwayat Lokal</h2>
@@ -98,10 +106,8 @@
 
     <script>
         /**
-         * PENTING: Masukkan URL hasil Deploy Google Apps Script Anda di sini.
-         * Pastikan saat Deploy pilih: 
-         * 1. Execute as: Me
-         * 2. Who has access: Anyone
+         * PENTING: Masukkan URL hasil Deploy Web App Apps Script Anda di sini.
+         * Contoh: https://script.google.com/macros/s/AKfycb.../exec
          */
         const SCRIPT_URL = ''; 
         
@@ -184,55 +190,52 @@
             btnSubmit.disabled = true;
             btnSubmit.innerText = "⌛ Memproses...";
 
-            // Data yang akan dikirim ke Sheets
+            // Menyiapkan data untuk dikirim ke Google Sheets (Sesuai parameter di Apps Script Anda)
             const newEntry = {
-                category: currentTab.toUpperCase(), // Tipe
-                flow: flow.toUpperCase(),           // Arus
-                source: source,                     // Sumber
-                amount: amount,                     // Nominal
-                description: desc                   // Keterangan
+                category: currentTab === 'pribadi' ? 'Pribadi' : 'Kantor',
+                flow: flow === 'masuk' ? 'Masuk' : 'Keluar',
+                source: source,
+                amount: amount,
+                description: desc
             };
 
-            // Simpan Lokal agar user bisa langsung lihat hasilnya
-            const localEntry = { ...newEntry, id: Date.now().toString(), date: new Date().toISOString(), type: currentTab, desc: desc };
+            // Simpan Lokal untuk Riwayat di HP
+            const localEntry = { ...newEntry, id: Date.now().toString(), date: new Date().toISOString(), type: currentTab };
             entries.push(localEntry);
             localStorage.setItem('rekap_uang_v3', JSON.stringify(entries));
 
-            // Sinkron ke Google Sheets
-            if (SCRIPT_URL) {
-                statusEl.innerText = "☁️ Menghubungkan ke Google Sheets...";
+            // Kirim ke Google Sheets jika URL tersedia
+            if (SCRIPT_URL && SCRIPT_URL.startsWith('http')) {
+                statusEl.innerText = "☁️ Mengirim ke Google Sheets...";
                 statusEl.classList.remove('hidden', 'text-red-500', 'text-green-600');
                 statusEl.classList.add('text-gray-500');
                 
                 try {
                     const params = new URLSearchParams();
+                    // Ini akan diterima sebagai e.parameter di Apps Script
                     for (const key in newEntry) params.append(key, newEntry[key]);
 
-                    // Gunakan mode: 'no-cors' karena Apps Script sering kali tidak mendukung CORS penuh 
-                    // tetapi data tetap masuk.
+                    // Gunakan mode no-cors untuk menghindari blokir CORS (umum di Apps Script)
                     await fetch(SCRIPT_URL, { 
                         method: 'POST', 
                         body: params, 
-                        mode: 'no-cors',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        }
+                        mode: 'no-cors'
                     });
                     
-                    statusEl.innerText = "✅ Data Berhasil Terkirim ke Spreadsheet!";
+                    statusEl.innerText = "✅ Berhasil Masuk Database!";
                     statusEl.classList.replace('text-gray-500', 'text-green-600');
                     setTimeout(() => statusEl.classList.add('hidden'), 5000);
                 } catch (e) {
-                    statusEl.innerText = "❌ Kesalahan Jaringan/URL (Data tetap tersimpan lokal).";
+                    console.error(e);
+                    statusEl.innerText = "❌ Gagal Sinkron. Cek Koneksi/URL.";
                     statusEl.classList.replace('text-gray-500', 'text-red-500');
                 }
             } else {
-                statusEl.innerText = "⚠️ Link SCRIPT_URL kosong! Data hanya tersimpan di HP/Browser ini.";
-                statusEl.classList.remove('hidden');
-                statusEl.classList.add('text-orange-500');
+                document.getElementById('alert-no-url').classList.remove('hidden');
+                setTimeout(() => document.getElementById('alert-no-url').classList.add('hidden'), 5000);
             }
 
-            // Reset Form
+            // Reset UI
             document.getElementById('input-amount').value = '';
             document.getElementById('input-desc-manual').value = '';
             btnSubmit.disabled = false;
@@ -248,13 +251,17 @@
             let inSum = 0, outSum = 0;
             const now = new Date();
 
+            // Check URL on load
+            if (!SCRIPT_URL) document.getElementById('alert-no-url').classList.remove('hidden');
+
             filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(entry => {
                 const d = new Date(entry.date);
+                // Hanya hitung saldo bulan ini
                 if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-                    if (entry.flow.toLowerCase() === 'masuk') inSum += entry.amount; else outSum += entry.amount;
+                    if (entry.flow === 'Masuk') inSum += entry.amount; else outSum += entry.amount;
                 }
                 
-                const isIn = entry.flow.toLowerCase() === 'masuk';
+                const isIn = entry.flow === 'Masuk';
                 const el = document.createElement('div');
                 el.className = "bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center";
                 el.innerHTML = `
@@ -263,8 +270,8 @@
                             ${isIn ? 'IN' : 'OUT'}
                         </div>
                         <div>
-                            <p class="text-sm font-bold text-gray-800">${entry.desc}</p>
-                            <p class="text-[10px] text-gray-400">${d.toLocaleDateString('id-ID')} ${d.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} • ${entry.source}</p>
+                            <p class="text-sm font-bold text-gray-800">${entry.description}</p>
+                            <p class="text-[10px] text-gray-400">${d.toLocaleDateString('id-ID')} • ${entry.source}</p>
                         </div>
                     </div>
                     <div class="text-right">
@@ -283,7 +290,7 @@
         }
 
         function deleteItem(id) {
-            if(confirm("Hapus data dari riwayat lokal? (Ini tidak akan menghapus data yang sudah ada di Google Sheets)")) {
+            if(confirm("Hapus data dari riwayat lokal? (Ini tidak menghapus data di Google Sheets)")) {
                 entries = entries.filter(e => e.id !== id);
                 localStorage.setItem('rekap_uang_v3', JSON.stringify(entries));
                 render();
@@ -296,7 +303,7 @@
             const doc = new jsPDF();
             doc.text("Laporan Rekap Uang - " + currentTab.toUpperCase(), 14, 15);
             const rows = entries.filter(e => e.type === currentTab).map(e => [
-                new Date(e.date).toLocaleDateString(), e.flow.toUpperCase(), e.desc, e.source, formatRupiah(e.amount)
+                new Date(e.date).toLocaleDateString(), e.flow.toUpperCase(), e.description, e.source, formatRupiah(e.amount)
             ]);
             doc.autoTable({ head: [['Tgl', 'Arus', 'Ket', 'Src', 'Nominal']], body: rows, startY: 20 });
             doc.save(`rekap_${currentTab}.pdf`);
