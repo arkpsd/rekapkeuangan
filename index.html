@@ -52,13 +52,13 @@
                 <div class="space-y-3">
                     <div class="flex space-x-2">
                         <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="flow" value="keluar" class="peer sr-only" checked>
+                            <input type="radio" name="flow" value="keluar" class="peer sr-only" onchange="updateOptions()" checked>
                             <div class="text-center py-2 rounded-lg border border-gray-300 peer-checked:bg-red-500 peer-checked:text-white peer-checked:border-red-500 text-xs font-bold transition-colors text-gray-600">
                                 PENGELUARAN
                             </div>
                         </label>
                         <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="flow" value="masuk" class="peer sr-only">
+                            <input type="radio" name="flow" value="masuk" class="peer sr-only" onchange="updateOptions()">
                             <div class="text-center py-2 rounded-lg border border-gray-300 peer-checked:bg-green-500 peer-checked:text-white peer-checked:border-green-500 text-xs font-bold transition-colors text-gray-600">
                                 PEMASUKAN
                             </div>
@@ -72,18 +72,18 @@
                             <option value="BRI">💳 BRI</option>
                             <option value="BANK JATIM">💳 JATIM</option>
                         </select>
-                        <input type="text" id="input-amount" oninput="formatInputRupiah(this)" placeholder="Nominal" class="p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold">
+                        <input type="text" id="input-amount" oninput="formatInputRupiah(this)" onkeyup="handleEnter(event)" placeholder="Nominal" class="p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold">
                     </div>
                     
                     <div class="space-y-2">
                         <select id="select-desc" onchange="toggleManualDesc()" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                            <!-- Opsi akan diisi oleh JavaScript berdasarkan Tab -->
+                            <!-- Opsi akan diisi oleh JavaScript berdasarkan Tab & Alur -->
                         </select>
-                        <input type="text" id="input-desc-manual" placeholder="Tulis keterangan manual..." class="hidden w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <input type="text" id="input-desc-manual" onkeyup="handleEnter(event)" placeholder="Tulis keterangan manual..." class="hidden w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                     </div>
                     
                     <button id="btn-submit" onclick="saveData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow-md transition-all active:scale-95">
-                        Simpan Data
+                        Simpan Data (Enter)
                     </button>
                 </div>
             </section>
@@ -105,7 +105,14 @@
         let entries = JSON.parse(localStorage.getItem('rekap_uang_v2')) || [];
 
         const OPTIONS_PRIBADI = ["Bensin", "Makanan", "Belanja Online", "Belanja Offline", "Listrik", "Wifi", "PDAM", "Lain Lain"];
-        const OPTIONS_KANTOR = ["GB", "Primamax", "Warna", "Pak Burhan", "GFBABAT", "IndahPrint", "QueenDistro", "Lain Lain"];
+        const OPTIONS_KANTOR_OUT = ["GB", "Primamax", "Warna", "Pak Burhan", "GFBABAT", "IndahPrint", "QueenDistro", "Lain Lain"];
+        const OPTIONS_KANTOR_IN = ["Pembayaran", "Gajipribadi", "Lain Lain"];
+
+        function handleEnter(event) {
+            if (event.key === "Enter") {
+                saveData();
+            }
+        }
 
         function formatRupiah(angka) {
             return 'Rp. ' + new Intl.NumberFormat('id-ID').format(angka);
@@ -139,7 +146,16 @@
 
         function updateOptions() {
             const select = document.getElementById('select-desc');
-            const options = currentTab === 'pribadi' ? OPTIONS_PRIBADI : OPTIONS_KANTOR;
+            const flow = document.querySelector('input[name="flow"]:checked').value;
+            
+            let options = [];
+            if (currentTab === 'pribadi') {
+                options = OPTIONS_PRIBADI;
+            } else {
+                // Tab Kantor
+                options = (flow === 'masuk') ? OPTIONS_KANTOR_IN : OPTIONS_KANTOR_OUT;
+            }
+            
             select.innerHTML = options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
             toggleManualDesc();
         }
@@ -149,6 +165,7 @@
             const manualInput = document.getElementById('input-desc-manual');
             if (select.value === "Lain Lain") {
                 manualInput.classList.remove('hidden');
+                manualInput.focus();
             } else {
                 manualInput.classList.add('hidden');
                 manualInput.value = '';
@@ -199,8 +216,10 @@
             document.getElementById('input-amount').value = '';
             document.getElementById('input-desc-manual').value = '';
             btnSubmit.disabled = false;
-            btnSubmit.innerText = "Simpan Data";
+            btnSubmit.innerText = "Simpan Data (Enter)";
             render();
+            // Kembalikan fokus ke input nominal untuk input cepat berikutnya
+            document.getElementById('input-amount').focus();
         }
 
         function render() {
