@@ -104,7 +104,8 @@
 
                 <div class="grid grid-cols-1 gap-3">
                     <div class="relative">
-                        <input type="text" id="input-amount" oninput="handleMathInput(this)" onkeyup="handleEnter(event)" placeholder="0" class="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-100 rounded-xl text-xl font-black text-gray-800 focus:border-indigo-500 outline-none">
+                        <!-- Perubahan di sini: menambahkan inputmode="decimal" untuk keyboard angka otomatis di mobile -->
+                        <input type="text" id="input-amount" inputmode="decimal" oninput="handleMathInput(this)" onkeyup="handleEnter(event)" placeholder="0" class="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-100 rounded-xl text-xl font-black text-gray-800 focus:border-indigo-500 outline-none">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Rp</span>
                         <div id="math-preview" class="absolute -bottom-4 right-2 text-[10px] font-bold text-indigo-500 italic"></div>
                     </div>
@@ -196,6 +197,7 @@
 
         function handleMathInput(input) {
             const preview = document.getElementById('math-preview');
+            // Menghapus titik ribuan untuk proses kalkulasi
             let val = input.value.replace(/\./g, '').replace(/[^0-9+\-*/().]/g, '');
             if (/[+\-*/]/.test(val)) {
                 try {
