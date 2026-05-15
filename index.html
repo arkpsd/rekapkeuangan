@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Uang - AI Receipt Scanner</title>
+    <title>Rekap Uang - Manual Input</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -47,13 +47,7 @@
             <section class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-sm font-bold text-gray-700">Transaksi Baru</h2>
-                    <label class="cursor-pointer bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition shadow-md flex items-center space-x-2">
-                        <span>📸 Scan Foto Struk</span>
-                        <input type="file" id="input-struk" accept="image/*" capture="environment" class="hidden" onchange="processReceipt(event)">
-                    </label>
                 </div>
-                
-                <div id="scan-status" class="hidden text-xs font-medium mb-3 px-3 py-2 rounded-lg"></div>
                 
                 <div class="space-y-3">
                     <div class="flex space-x-2">
@@ -81,7 +75,12 @@
                         <input type="text" id="input-amount" oninput="formatInputRupiah(this)" placeholder="Nominal" class="p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold">
                     </div>
                     
-                    <input type="text" id="input-desc" placeholder="Keterangan (Contoh: Beli Makan)" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <div class="space-y-2">
+                        <select id="select-desc" onchange="toggleManualDesc()" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                            <!-- Opsi akan diisi oleh JavaScript berdasarkan Tab -->
+                        </select>
+                        <input type="text" id="input-desc-manual" placeholder="Tulis keterangan manual..." class="hidden w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
                     
                     <button id="btn-submit" onclick="saveData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow-md transition-all active:scale-95">
                         Simpan Data
@@ -104,6 +103,9 @@
         const SCRIPT_URL = ''; 
         let currentTab = 'pribadi';
         let entries = JSON.parse(localStorage.getItem('rekap_uang_v2')) || [];
+
+        const OPTIONS_PRIBADI = ["Bensin", "Makanan", "Belanja Online", "Belanja Offline", "Listrik", "Wifi", "PDAM", "Lain Lain"];
+        const OPTIONS_KANTOR = ["GB", "Primamax", "Warna", "Pak Burhan", "GFBABAT", "IndahPrint", "QueenDistro", "Lain Lain"];
 
         function formatRupiah(angka) {
             return 'Rp. ' + new Intl.NumberFormat('id-ID').format(angka);
@@ -131,15 +133,37 @@
             currentTab = tab;
             document.getElementById('tab-pribadi').className = tab === 'pribadi' ? "flex-1 py-1.5 text-sm font-semibold rounded-md shadow-sm bg-white text-indigo-700 transition-all" : "flex-1 py-1.5 text-sm font-semibold rounded-md text-indigo-100 hover:text-white transition-all";
             document.getElementById('tab-kantor').className = tab === 'kantor' ? "flex-1 py-1.5 text-sm font-semibold rounded-md shadow-sm bg-white text-indigo-700 transition-all" : "flex-1 py-1.5 text-sm font-semibold rounded-md text-indigo-100 hover:text-white transition-all";
+            updateOptions();
             render();
+        }
+
+        function updateOptions() {
+            const select = document.getElementById('select-desc');
+            const options = currentTab === 'pribadi' ? OPTIONS_PRIBADI : OPTIONS_KANTOR;
+            select.innerHTML = options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+            toggleManualDesc();
+        }
+
+        function toggleManualDesc() {
+            const select = document.getElementById('select-desc');
+            const manualInput = document.getElementById('input-desc-manual');
+            if (select.value === "Lain Lain") {
+                manualInput.classList.remove('hidden');
+            } else {
+                manualInput.classList.add('hidden');
+                manualInput.value = '';
+            }
         }
 
         async function saveData() {
             const amountInput = document.getElementById('input-amount').value;
             const amount = unformatRupiah(amountInput);
-            const desc = document.getElementById('input-desc').value;
+            const selectVal = document.getElementById('select-desc').value;
+            const manualVal = document.getElementById('input-desc-manual').value;
             const source = document.getElementById('input-source').value;
             const flow = document.querySelector('input[name="flow"]:checked').value;
+
+            let desc = selectVal === "Lain Lain" ? manualVal : selectVal;
 
             if (!amount || amount <= 0) { alert("Nominal harus diisi!"); return; }
             if (!desc.trim()) { alert("Keterangan harus diisi!"); return; }
@@ -173,7 +197,7 @@
             }
 
             document.getElementById('input-amount').value = '';
-            document.getElementById('input-desc').value = '';
+            document.getElementById('input-desc-manual').value = '';
             btnSubmit.disabled = false;
             btnSubmit.innerText = "Simpan Data";
             render();
@@ -211,7 +235,7 @@
                         <p class="text-sm font-bold ${isMasuk ? 'text-green-600' : 'text-red-600'}">
                             ${isMasuk ? '+' : '-'}${formatRupiah(entry.amount)}
                         </p>
-                        <button onclick="deleteItem('${entry.id}')" class="text-[10px] text-gray-300 hover:text-red-500">Hapus</button>
+                        <button onclick="deleteItem('${entry.id}')" class="text-[10px] text-gray-400 hover:text-red-500">Hapus</button>
                     </div>
                 `;
                 listContainer.appendChild(div);
@@ -223,92 +247,31 @@
         }
 
         function deleteItem(id) {
-            if(confirm("Hapus?")) {
+            if(confirm("Hapus catatan ini?")) {
                 entries = entries.filter(e => e.id !== id);
                 localStorage.setItem('rekap_uang_v2', JSON.stringify(entries));
                 render();
             }
         }
 
-        async function processReceipt(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const statusDiv = document.getElementById('scan-status');
-            
-            statusDiv.className = "block text-xs font-medium mb-3 px-3 py-2 rounded-lg bg-blue-100 text-blue-700 animate-pulse";
-            statusDiv.innerText = "⏳ Menghubungkan ke AI untuk membaca struk...";
-            statusDiv.classList.remove('hidden');
-            
-            try {
-                const reader = new FileReader();
-                const base64Promise = new Promise(resolve => {
-                    reader.onload = () => resolve(reader.result.split(',')[1]);
-                    reader.readAsDataURL(file);
-                });
-                const base64Data = await base64Promise;
-                
-                const prompt = "Analisis gambar struk ini secara mendalam. Cari angka TOTAL atau JUMLAH AKHIR yang harus dibayar. Cari juga nama toko atau jenis pembelian utama untuk keterangan. Kembalikan data HANYA dalam format JSON: {\"amount\": integer_tanpa_titik, \"desc\": \"nama_toko_atau_barang\"}. Pastikan amount adalah angka bulat positif.";
-
-                const payload = {
-                    contents: [{ 
-                        parts: [
-                            { text: prompt }, 
-                            { inlineData: { mimeType: file.type, data: base64Data } }
-                        ] 
-                    }],
-                    generationConfig: { responseMimeType: "application/json" }
-                };
-                
-                const apiKey = ""; // Dikelola environment
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const result = await response.json();
-                const textResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                
-                if (textResponse) {
-                    const data = JSON.parse(textResponse);
-                    if (data.amount && data.amount > 0) {
-                        document.getElementById('input-amount').value = data.amount;
-                        formatInputRupiah(document.getElementById('input-amount'));
-                        document.getElementById('input-desc').value = data.desc || "Belanja Struk";
-                        document.querySelector('input[name="flow"][value="keluar"]').checked = true;
-
-                        statusDiv.className = "block text-xs font-medium mb-3 px-3 py-2 rounded-lg bg-green-100 text-green-700";
-                        statusDiv.innerText = "✅ Berhasil membaca struk! Menyimpan ke database...";
-
-                        // Simpan Otomatis
-                        setTimeout(async () => {
-                            await saveData();
-                            statusDiv.innerText = "✅ Data tersimpan otomatis!";
-                            setTimeout(() => statusDiv.classList.add('hidden'), 3000);
-                        }, 500);
-                    } else {
-                        throw new Error("Nominal tidak ditemukan");
-                    }
-                } else {
-                    throw new Error("Respon AI kosong");
-                }
-            } catch (err) {
-                console.error(err);
-                statusDiv.className = "block text-xs font-medium mb-3 px-3 py-2 rounded-lg bg-red-100 text-red-700";
-                statusDiv.innerText = "❌ Gagal membaca struk. Coba foto lebih dekat dan jelas.";
-                setTimeout(() => statusDiv.classList.add('hidden'), 5000);
-            }
-        }
-
         function downloadPDF() {
+            if (entries.length === 0) return alert("Belum ada data.");
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             doc.text("Laporan Keuangan", 14, 15);
-            const rows = entries.map(e => [new Date(e.date).toLocaleDateString(), e.type, e.flow, e.desc, e.amount]);
-            doc.autoTable({ head: [['Tanggal', 'Tipe', 'Alur', 'Ket', 'Nominal']], body: rows, startY: 20 });
-            doc.save('rekap.pdf');
+            const rows = entries.filter(e => e.type === currentTab).map(e => [
+                new Date(e.date).toLocaleDateString(), 
+                e.flow === 'masuk' ? 'Masuk' : 'Keluar', 
+                e.desc, 
+                e.source,
+                formatRupiah(e.amount)
+            ]);
+            doc.autoTable({ head: [['Tanggal', 'Arus', 'Ket', 'Sumber', 'Nominal']], body: rows, startY: 20 });
+            doc.save(`Laporan_${currentTab}.pdf`);
         }
 
+        // Initialize options on load
+        updateOptions();
         render();
     </script>
 </body>
