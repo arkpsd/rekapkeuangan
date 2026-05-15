@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rekap Uang Pro - Full View</title>
+    <title>Rekap Uang Pro - Calculator Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -42,11 +42,15 @@
             100% { transform: translate(-100%, 0); }
         }
 
-        /* Responsive height adjustments for rotated screen */
+        /* Responsive adjustments for rotated screen */
         @media (orientation: landscape) and (max-height: 500px) {
             header { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
             .total-card { padding: 0.75rem !important; }
             .main-grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+        }
+
+        .calc-btn {
+            @apply flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-xl transition-all active:scale-90 text-lg;
         }
     </style>
 </head>
@@ -74,7 +78,7 @@
             </div>
         </div>
 
-        <!-- Mobile Tabs (Visible on small screens) -->
+        <!-- Mobile Tabs -->
         <div class="sm:hidden flex rounded-xl bg-indigo-800/40 p-1 mt-4">
             <button id="tab-pribadi-m" onclick="switchTab('pribadi')" class="flex-1 py-2.5 text-[10px] font-black rounded-lg transition-all tab-active uppercase">Pribadi</button>
             <button id="tab-kantor-m" onclick="switchTab('kantor')" class="flex-1 py-2.5 text-[10px] font-black rounded-lg transition-all uppercase">Kantor</button>
@@ -89,7 +93,7 @@
         </div>
     </div>
 
-    <!-- Main Content Container -->
+    <!-- Main Content -->
     <main class="flex-1 overflow-hidden relative">
         <div id="scroll-area" class="h-full overflow-y-auto px-4 py-6">
             <div class="max-w-6xl mx-auto main-grid grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -127,9 +131,18 @@
 
                         <div class="space-y-3">
                             <div class="relative group">
-                                <input type="text" id="input-amount" inputmode="decimal" oninput="handleMathInput(this)" onkeyup="handleEnter(event)" placeholder="0" class="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-2xl text-2xl font-black text-slate-900 outline-none transition-all">
+                                <input type="text" id="input-amount" inputmode="text" oninput="handleMathInput(this)" onkeyup="handleEnter(event)" placeholder="0" class="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-2xl text-2xl font-black text-slate-900 outline-none transition-all">
                                 <span class="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black text-lg">Rp</span>
                                 <div id="math-preview" class="absolute -bottom-2 right-4 text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full"></div>
+                            </div>
+
+                            <!-- Calculator Buttons -->
+                            <div class="flex gap-2">
+                                <button onclick="appendToInput('+')" class="calc-btn text-indigo-600">+</button>
+                                <button onclick="appendToInput('-')" class="calc-btn text-red-500">-</button>
+                                <button onclick="appendToInput('*')" class="calc-btn text-orange-500">×</button>
+                                <button onclick="appendToInput('/')" class="calc-btn text-blue-500">÷</button>
+                                <button onclick="clearAmount()" class="calc-btn bg-slate-800 text-white hover:bg-slate-900">C</button>
                             </div>
 
                             <div class="flex gap-2">
@@ -157,11 +170,11 @@
                         <span id="entry-count" class="text-[10px] font-black bg-slate-200 text-slate-600 px-2 py-1 rounded-md">0 Entri</span>
                     </div>
                     <div id="list-history" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
-                        <!-- History Items Generated Here -->
+                        <!-- History Items -->
                     </div>
                 </div>
 
-                <!-- Report View (Hidden initially) -->
+                <!-- Report View -->
                 <div id="report-view" class="hidden col-span-full space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-white p-8 rounded-3xl shadow-sm border border-indigo-50">
@@ -179,7 +192,6 @@
                             <div id="report-summary-kantor" class="grid grid-cols-2 gap-4"></div>
                         </div>
                     </div>
-                    
                     <div class="bg-slate-900 p-8 rounded-3xl text-white">
                         <h3 class="text-xs font-black text-slate-400 uppercase mb-6">Distribusi Saldo Per Akun</h3>
                         <div id="account-balances" class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center"></div>
@@ -188,7 +200,7 @@
             </div>
         </div>
 
-        <!-- Settings Modal Layer -->
+        <!-- Settings Modal -->
         <div id="settings-overlay" class="hidden absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 <div class="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
@@ -200,13 +212,10 @@
                     </button>
                 </div>
                 <div class="p-8 overflow-y-auto space-y-8">
-                    <!-- Marquee Editor -->
                     <div class="space-y-3">
                         <label class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Konten Teks Berjalan</label>
                         <textarea id="setting-running-text" oninput="updateRunningText(this.value)" class="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl text-sm font-medium outline-none h-24" placeholder="Ketik pesan pengingat di sini..."></textarea>
                     </div>
-
-                    <!-- Balance Editor -->
                     <div class="space-y-4">
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Input Saldo Awal (Saldo Sekarang)</label>
                         <div class="grid grid-cols-2 gap-4">
@@ -228,7 +237,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="pt-6 border-t border-slate-100">
                         <button onclick="clearAll()" class="w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black text-[11px] hover:bg-red-100 transition-all uppercase tracking-widest">Reset Ulang Semua Data</button>
                     </div>
@@ -262,6 +270,19 @@
         function formatNumber(num) { return new Intl.NumberFormat('id-ID').format(num); }
         function handleEnter(e) { if (e.key === "Enter") saveData(); }
 
+        function appendToInput(char) {
+            const input = document.getElementById('input-amount');
+            let val = input.value.replace(/\./g, '');
+            input.value = val + char;
+            handleMathInput(input);
+        }
+
+        function clearAmount() {
+            const input = document.getElementById('input-amount');
+            input.value = "";
+            document.getElementById('math-preview').innerText = "";
+        }
+
         function updateRunningText(val) {
             runningText = val;
             localStorage.setItem('rekap_v_full_marquee', val);
@@ -270,11 +291,16 @@
 
         function handleMathInput(input) {
             const preview = document.getElementById('math-preview');
+            // Allow numbers and math operators
             let val = input.value.replace(/\./g, '').replace(/[^0-9+\-*/().]/g, '');
+            
             if (/[+\-*/]/.test(val)) {
                 try {
-                    const res = eval(val);
-                    if (res !== undefined && res !== null) preview.innerText = "= " + formatNumber(res);
+                    // Simple evaluation
+                    const res = Function('"use strict";return (' + val + ')')();
+                    if (res !== undefined && res !== null && !isNaN(res)) {
+                        preview.innerText = "= " + formatNumber(Math.round(res));
+                    }
                 } catch (e) { preview.innerText = ""; }
                 input.value = val;
             } else {
@@ -285,24 +311,14 @@
 
         function switchTab(tab) {
             currentTab = tab;
-            // Update UI for both mobile and desktop tabs
             ['pribadi', 'kantor', 'laporan'].forEach(t => {
-                const btnD = document.getElementById('tab-' + t + '-d');
-                const btnM = document.getElementById('tab-' + t + '-m');
-                if (tab === t) {
-                    btnD.classList.add('tab-active');
-                    btnM.classList.add('tab-active');
-                } else {
-                    btnD.classList.remove('tab-active');
-                    btnM.classList.remove('tab-active');
-                }
+                document.getElementById('tab-' + t + '-d').classList.toggle('tab-active', tab === t);
+                document.getElementById('tab-' + t + '-m').classList.toggle('tab-active', tab === t);
             });
-
             const isLaporan = tab === 'laporan';
             document.getElementById('input-section').classList.toggle('hidden', isLaporan);
             document.getElementById('history-section').classList.toggle('hidden', isLaporan);
             document.getElementById('report-view').classList.toggle('hidden', !isLaporan);
-            
             if (isLaporan) renderReport(); else { updateOptions(); render(); }
             document.getElementById('scroll-area').scrollTo(0, 0);
         }
@@ -345,18 +361,23 @@
 
         async function saveData() {
             const inputVal = document.getElementById('input-amount').value.replace(/\./g, '');
-            let amount = 0; try { amount = eval(inputVal) || 0; } catch(e) { return; }
+            let amount = 0; 
+            try { 
+                amount = Function('"use strict";return (' + inputVal + ')')() || 0; 
+            } catch(e) { return; }
+            
             const flow = document.querySelector('input[name="flow"]:checked').value;
             const source = document.getElementById('input-source').value;
             const desc = document.getElementById('select-desc').value === "Lain Lain" ? document.getElementById('input-desc-manual').value : document.getElementById('select-desc').value;
 
             if (!amount || !desc) return;
-            const entry = { id: Date.now().toString(), date: new Date().toISOString(), type: currentTab, flow: flow === 'masuk' ? 'Masuk' : 'Keluar', source: source, amount: amount, description: desc };
+            const entry = { id: Date.now().toString(), date: new Date().toISOString(), type: currentTab, flow: flow === 'masuk' ? 'Masuk' : 'Keluar', source: source, amount: Math.round(amount), description: desc };
             entries.push(entry);
             localStorage.setItem('rekap_v_full_data', JSON.stringify(entries));
             
             document.getElementById('input-amount').value = '';
             document.getElementById('input-desc-manual').value = '';
+            document.getElementById('math-preview').innerText = "";
             render();
             syncToCloud(entry);
         }
@@ -457,7 +478,7 @@
         }
 
         function clearAll() {
-            if (confirm("SANGAT PENTING: Tindakan ini akan menghapus semua riwayat dan saldo awal. Lanjutkan?")) {
+            if (confirm("Reset ulang semua data?")) {
                 localStorage.clear();
                 location.reload();
             }
@@ -469,13 +490,11 @@
             const title = type === 'pribadi' ? "LAPORAN KEUANGAN PRIBADI" : "LAPORAN KEUANGAN KANTOR";
             const filteredData = entries.filter(e => e.type === type);
             doc.setFontSize(18); doc.text(title, 14, 20);
-            doc.setFontSize(10); doc.text("Dibuat pada: " + new Date().toLocaleString('id-ID'), 14, 28);
             const tableData = filteredData.map(e => [new Date(e.date).toLocaleDateString('id-ID'), e.flow, e.source, e.description, formatNumber(e.amount)]);
-            doc.autoTable({ head: [['Tanggal', 'Arus', 'Sumber', 'Keterangan', 'Nominal (Rp)']], body: tableData, startY: 35, theme: 'grid', headStyles: { fillColor: type === 'pribadi' ? [79, 70, 229] : [147, 51, 234], fontStyle: 'bold' } });
-            doc.save(`Laporan_${type}_${new Date().toISOString().split('T')[0]}.pdf`);
+            doc.autoTable({ head: [['Tanggal', 'Arus', 'Sumber', 'Keterangan', 'Nominal (Rp)']], body: tableData, startY: 35 });
+            doc.save(`Laporan_${type}.pdf`);
         }
 
-        // Initialize UI
         document.getElementById('running-text-display').innerText = runningText;
         updateOptions();
         render();
