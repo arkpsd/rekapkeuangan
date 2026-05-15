@@ -97,7 +97,12 @@
     </div>
 
     <script>
-        // TEMPELKAN URL WEB APP GOOGLE SCRIPT ANDA DI SINI
+        /**
+         * PENTING: Masukkan URL hasil Deploy Google Apps Script Anda di sini.
+         * Pastikan saat Deploy pilih: 
+         * 1. Execute as: Me
+         * 2. Who has access: Anyone
+         */
         const SCRIPT_URL = ''; 
         
         let currentTab = 'pribadi';
@@ -179,22 +184,23 @@
             btnSubmit.disabled = true;
             btnSubmit.innerText = "⌛ Memproses...";
 
+            // Data yang akan dikirim ke Sheets
             const newEntry = {
-                category: currentTab.toUpperCase(),
-                flow: flow.toUpperCase(),
-                source: source,
-                amount: amount,
-                description: desc
+                category: currentTab.toUpperCase(), // Tipe
+                flow: flow.toUpperCase(),           // Arus
+                source: source,                     // Sumber
+                amount: amount,                     // Nominal
+                description: desc                   // Keterangan
             };
 
-            // Simpan Lokal
+            // Simpan Lokal agar user bisa langsung lihat hasilnya
             const localEntry = { ...newEntry, id: Date.now().toString(), date: new Date().toISOString(), type: currentTab, desc: desc };
             entries.push(localEntry);
             localStorage.setItem('rekap_uang_v3', JSON.stringify(entries));
 
             // Sinkron ke Google Sheets
             if (SCRIPT_URL) {
-                statusEl.innerText = "☁️ Mengirim ke Google Sheets...";
+                statusEl.innerText = "☁️ Menghubungkan ke Google Sheets...";
                 statusEl.classList.remove('hidden', 'text-red-500', 'text-green-600');
                 statusEl.classList.add('text-gray-500');
                 
@@ -202,21 +208,31 @@
                     const params = new URLSearchParams();
                     for (const key in newEntry) params.append(key, newEntry[key]);
 
+                    // Gunakan mode: 'no-cors' karena Apps Script sering kali tidak mendukung CORS penuh 
+                    // tetapi data tetap masuk.
                     await fetch(SCRIPT_URL, { 
                         method: 'POST', 
                         body: params, 
-                        mode: 'no-cors' 
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
                     });
                     
-                    statusEl.innerText = "✅ Data Berhasil Masuk Spreadsheet!";
+                    statusEl.innerText = "✅ Data Berhasil Terkirim ke Spreadsheet!";
                     statusEl.classList.replace('text-gray-500', 'text-green-600');
-                    setTimeout(() => statusEl.classList.add('hidden'), 4000);
+                    setTimeout(() => statusEl.classList.add('hidden'), 5000);
                 } catch (e) {
-                    statusEl.innerText = "❌ Gagal Sinkron (Cek Internet/URL).";
+                    statusEl.innerText = "❌ Kesalahan Jaringan/URL (Data tetap tersimpan lokal).";
                     statusEl.classList.replace('text-gray-500', 'text-red-500');
                 }
+            } else {
+                statusEl.innerText = "⚠️ Link SCRIPT_URL kosong! Data hanya tersimpan di HP/Browser ini.";
+                statusEl.classList.remove('hidden');
+                statusEl.classList.add('text-orange-500');
             }
 
+            // Reset Form
             document.getElementById('input-amount').value = '';
             document.getElementById('input-desc-manual').value = '';
             btnSubmit.disabled = false;
@@ -267,7 +283,7 @@
         }
 
         function deleteItem(id) {
-            if(confirm("Hapus data dari riwayat lokal?")) {
+            if(confirm("Hapus data dari riwayat lokal? (Ini tidak akan menghapus data yang sudah ada di Google Sheets)")) {
                 entries = entries.filter(e => e.id !== id);
                 localStorage.setItem('rekap_uang_v3', JSON.stringify(entries));
                 render();
