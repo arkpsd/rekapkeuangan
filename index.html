@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Uang - Google Sheets Sync</title>
+    <title>Rekap Uang - Pro Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -11,21 +11,30 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .tab-active { background-color: white; color: #4f46e5; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body class="text-gray-800 antialiased h-screen flex justify-center items-start pt-4 sm:pt-10 px-4">
 
     <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col h-[95vh] sm:h-[85vh]">
         
+        <!-- Header & Navigasi Utama -->
         <header class="bg-indigo-600 text-white p-4">
-            <h1 class="text-xl font-bold text-center mb-4">Rekap Keuangan</h1>
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-xl font-bold">Rekap Keuangan</h1>
+                <button onclick="toggleSettings()" class="p-2 hover:bg-indigo-500 rounded-full transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
             <div class="flex rounded-lg bg-indigo-800 p-1">
-                <button id="tab-pribadi" onclick="switchTab('pribadi')" class="flex-1 py-1.5 text-sm font-semibold rounded-md shadow-sm bg-white text-indigo-700 transition-all">Pribadi</button>
-                <button id="tab-kantor" onclick="switchTab('kantor')" class="flex-1 py-1.5 text-sm font-semibold rounded-md text-indigo-100 hover:text-white transition-all">Kantor</button>
+                <button id="tab-pribadi" onclick="switchTab('pribadi')" class="flex-1 py-1.5 text-sm font-semibold rounded-md transition-all tab-active">Pribadi</button>
+                <button id="tab-kantor" onclick="switchTab('kantor')" class="flex-1 py-1.5 text-sm font-semibold rounded-md transition-all">Kantor</button>
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-4 space-y-5">
+        <div id="main-content" class="flex-1 overflow-y-auto p-4 space-y-5">
             
             <!-- Ringkasan Saldo -->
             <section class="grid grid-cols-2 gap-3">
@@ -66,13 +75,16 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
-                        <select id="input-source" class="p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                        <select id="input-source" class="p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium">
                             <option value="CASH">💵 CASH</option>
                             <option value="BCA">💳 BCA</option>
                             <option value="BRI">💳 BRI</option>
                             <option value="BANK JATIM">💳 JATIM</option>
                         </select>
-                        <input type="tel" id="input-amount" inputmode="numeric" oninput="formatInputRupiah(this)" onkeyup="handleEnter(event)" placeholder="Nominal" class="p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold">
+                        <div class="relative">
+                            <input type="text" id="input-amount" oninput="handleMathInput(this)" onkeyup="handleEnter(event)" placeholder="Contoh: 5000+2000" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold pr-10">
+                            <div id="math-preview" class="absolute right-2 top-2.5 text-[10px] font-bold text-indigo-500 bg-white px-1"></div>
+                        </div>
                     </div>
                     
                     <div class="space-y-2">
@@ -85,10 +97,6 @@
                         Simpan Data (Enter)
                     </button>
 
-                    <!-- Indikator Status Cloud -->
-                    <div id="alert-no-url" class="mt-2 p-2 bg-orange-100 border border-orange-200 rounded text-[10px] text-orange-700 font-semibold text-center hidden">
-                        ⚠️ SCRIPT_URL belum diisi! Data hanya tersimpan di HP ini.
-                    </div>
                     <p id="cloud-status" class="text-[10px] text-center text-gray-500 hidden font-semibold mt-2"></p>
                 </div>
             </section>
@@ -96,67 +104,144 @@
             <!-- Riwayat -->
             <section>
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-sm font-bold text-gray-700">Riwayat Lokal</h2>
+                    <h2 class="text-sm font-bold text-gray-700">Riwayat Lokal (Bulan Ini)</h2>
                     <button onclick="downloadPDF()" class="text-xs text-indigo-600 font-bold hover:underline">Cetak PDF</button>
                 </div>
                 <div id="list-history" class="space-y-2 pb-6"></div>
             </section>
         </div>
+
+        <!-- Dashboard Pengaturan (Hidden by Default) -->
+        <div id="settings-content" class="hidden flex-1 overflow-y-auto p-4 space-y-6">
+            <header class="flex items-center space-x-3 mb-2">
+                <button onclick="toggleSettings()" class="text-indigo-600 font-bold text-sm">← Kembali</button>
+                <h2 class="text-lg font-bold">Pengaturan Dropdown</h2>
+            </header>
+
+            <div class="space-y-4">
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <h3 class="text-sm font-bold mb-2">Kategori Pribadi</h3>
+                    <textarea id="set-pribadi" rows="3" class="w-full p-2 text-xs border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Pisahkan dengan koma..."></textarea>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <h3 class="text-sm font-bold mb-2">Kantor (Masuk)</h3>
+                    <textarea id="set-kantor-in" rows="3" class="w-full p-2 text-xs border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Pisahkan dengan koma..."></textarea>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <h3 class="text-sm font-bold mb-2">Kantor (Keluar)</h3>
+                    <textarea id="set-kantor-out" rows="3" class="w-full p-2 text-xs border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Pisahkan dengan koma..."></textarea>
+                </div>
+                <button onclick="saveSettings()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-sm shadow-md transition-all">
+                    Simpan Konfigurasi
+                </button>
+            </div>
+
+            <div class="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                <h3 class="text-sm font-bold mb-2 text-indigo-700">Statistik Data</h3>
+                <div class="grid grid-cols-2 gap-2 text-[10px]">
+                    <div class="bg-white p-2 rounded shadow-sm">
+                        <p class="text-gray-500">Total Transaksi</p>
+                        <p id="stat-count" class="text-lg font-bold">0</p>
+                    </div>
+                    <div class="bg-white p-2 rounded shadow-sm">
+                        <p class="text-gray-500">Ukuran Data</p>
+                        <p id="stat-size" class="text-lg font-bold">0 KB</p>
+                    </div>
+                </div>
+                <button onclick="clearLocalData()" class="w-full mt-3 bg-red-100 text-red-600 font-bold py-2 rounded-lg text-[10px] border border-red-200">
+                    HAPUS SEMUA RIWAYAT LOKAL
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
-        /**
-         * PENTING: Masukkan URL hasil Deploy Web App Apps Script Anda di sini.
-         * Contoh: https://script.google.com/macros/s/AKfycb.../exec
-         */
+        // MASUKKAN URL GOOGLE SCRIPT DISINI
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKWnWGwyxEFgXGmlXZdDxZgIh9IGLiBS-_Grk8eb2wDaZeWnPBxXy_bRYQBvBi0dR6iw/exec'; 
         
         let currentTab = 'pribadi';
-        let entries = JSON.parse(localStorage.getItem('rekap_uang_v3')) || [];
+        let isSettingsOpen = false;
+        let entries = JSON.parse(localStorage.getItem('rekap_uang_v4')) || [];
 
-        const OPTIONS_PRIBADI = ["Bensin", "Makanan", "Belanja Online", "Belanja Offline", "Listrik", "Wifi", "PDAM", "Lain Lain"];
-        const OPTIONS_KANTOR_OUT = ["GB", "Primamax", "Warna", "Pak Burhan", "GFBABAT", "IndahPrint", "QueenDistro", "Lain Lain"];
-        const OPTIONS_KANTOR_IN = ["Pembayaran", "Gajipribadi", "Lain Lain"];
+        // Konfigurasi Default Dropdown
+        let config = JSON.parse(localStorage.getItem('rekap_config_v4')) || {
+            pribadi: "Bensin, Makanan, Belanja Online, Belanja Offline, Listrik, PDAM",
+            kantorIn: "Pembayaran, Gaji, Refund",
+            kantorOut: "GB, Primamax, Warna, Pak Burhan, GFBABAT, IndahPrint, QueenDistro"
+        };
 
         function handleEnter(event) {
             if (event.key === "Enter") saveData();
+        }
+
+        // Fungsi Kalkulator Sederhana pada Input
+        function handleMathInput(input) {
+            const preview = document.getElementById('math-preview');
+            let val = input.value.replace(/[^0-9+\-*/().]/g, '');
+            input.value = val;
+            
+            if (/[+\-*/]/.test(val)) {
+                try {
+                    // Evaluasi matematika sederhana secara aman
+                    const result = eval(val);
+                    if (result && !isNaN(result)) {
+                        preview.innerText = "= " + new Intl.NumberFormat('id-ID').format(result);
+                    } else { preview.innerText = ""; }
+                } catch (e) { preview.innerText = ""; }
+            } else { preview.innerText = ""; }
         }
 
         function formatRupiah(angka) {
             return 'Rp. ' + new Intl.NumberFormat('id-ID').format(angka);
         }
 
-        function formatInputRupiah(input) {
-            let value = input.value.replace(/[^,\d]/g, '').toString();
-            let split = value.split(',');
-            let sisa = split[0].length % 3;
-            let rupiah = split[0].substr(0, sisa);
-            let ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-            if (ribuan) {
-                let separator = sisa ? '.' : '';
-                rupiah += separator + ribuan.join('.');
-            }
-            input.value = rupiah ? 'Rp. ' + rupiah : '';
-        }
-
-        function unformatRupiah(str) {
-            if (!str) return 0;
-            return parseInt(str.replace(/[^0-9]/g, '')) || 0;
-        }
-
         function switchTab(tab) {
             currentTab = tab;
-            document.getElementById('tab-pribadi').className = tab === 'pribadi' ? "flex-1 py-1.5 text-sm font-semibold rounded-md shadow-sm bg-white text-indigo-700 transition-all" : "flex-1 py-1.5 text-sm font-semibold rounded-md text-indigo-100 hover:text-white transition-all";
-            document.getElementById('tab-kantor').className = tab === 'kantor' ? "flex-1 py-1.5 text-sm font-semibold rounded-md shadow-sm bg-white text-indigo-700 transition-all" : "flex-1 py-1.5 text-sm font-semibold rounded-md text-indigo-100 hover:text-white transition-all";
+            document.getElementById('tab-pribadi').className = tab === 'pribadi' ? "flex-1 py-1.5 text-sm font-semibold rounded-md transition-all tab-active" : "flex-1 py-1.5 text-sm font-semibold rounded-md transition-all";
+            document.getElementById('tab-kantor').className = tab === 'kantor' ? "flex-1 py-1.5 text-sm font-semibold rounded-md transition-all tab-active" : "flex-1 py-1.5 text-sm font-semibold rounded-md transition-all";
             updateOptions();
             render();
+        }
+
+        function toggleSettings() {
+            isSettingsOpen = !isSettingsOpen;
+            document.getElementById('main-content').classList.toggle('hidden', isSettingsOpen);
+            document.getElementById('settings-content').classList.toggle('hidden', !isSettingsOpen);
+            
+            if(isSettingsOpen) {
+                document.getElementById('set-pribadi').value = config.pribadi;
+                document.getElementById('set-kantor-in').value = config.kantorIn;
+                document.getElementById('set-kantor-out').value = config.kantorOut;
+                
+                // Update Statistik
+                document.getElementById('stat-count').innerText = entries.length;
+                document.getElementById('stat-size').innerText = (JSON.stringify(entries).length / 1024).toFixed(2) + " KB";
+            }
+        }
+
+        function saveSettings() {
+            config.pribadi = document.getElementById('set-pribadi').value;
+            config.kantorIn = document.getElementById('set-kantor-in').value;
+            config.kantorOut = document.getElementById('set-kantor-out').value;
+            localStorage.setItem('rekap_config_v4', JSON.stringify(config));
+            alert("Pengaturan Berhasil Disimpan!");
+            toggleSettings();
+            updateOptions();
         }
 
         function updateOptions() {
             const select = document.getElementById('select-desc');
             const flow = document.querySelector('input[name="flow"]:checked').value;
-            let options = currentTab === 'pribadi' ? OPTIONS_PRIBADI : (flow === 'masuk' ? OPTIONS_KANTOR_IN : OPTIONS_KANTOR_OUT);
-            select.innerHTML = options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+            
+            let list = [];
+            if (currentTab === 'pribadi') {
+                list = config.pribadi.split(',').map(s => s.trim());
+            } else {
+                list = (flow === 'masuk' ? config.kantorIn : config.kantorOut).split(',').map(s => s.trim());
+            }
+            
+            list.push("Lain Lain");
+            select.innerHTML = list.filter(i => i !== "").map(opt => `<option value="${opt}">${opt}</option>`).join('');
             toggleManualDesc();
         }
 
@@ -173,8 +258,11 @@
         }
 
         async function saveData() {
-            const amountInput = document.getElementById('input-amount').value;
-            const amount = unformatRupiah(amountInput);
+            const inputVal = document.getElementById('input-amount').value;
+            let amount = 0;
+            
+            try { amount = eval(inputVal) || 0; } catch(e) { return alert("Format nominal salah"); }
+
             const selectVal = document.getElementById('select-desc').value;
             const manualVal = document.getElementById('input-desc-manual').value;
             const source = document.getElementById('input-source').value;
@@ -188,9 +276,8 @@
 
             const btnSubmit = document.getElementById('btn-submit');
             btnSubmit.disabled = true;
-            btnSubmit.innerText = "⌛ Memproses...";
+            btnSubmit.innerText = "⌛ Menyimpan...";
 
-            // Menyiapkan data untuk dikirim ke Google Sheets (Sesuai parameter di Apps Script Anda)
             const newEntry = {
                 category: currentTab === 'pribadi' ? 'Pribadi' : 'Kantor',
                 flow: flow === 'masuk' ? 'Masuk' : 'Keluar',
@@ -199,69 +286,55 @@
                 description: desc
             };
 
-            // Simpan Lokal untuk Riwayat di HP
+            // Simpan Lokal
             const localEntry = { ...newEntry, id: Date.now().toString(), date: new Date().toISOString(), type: currentTab };
             entries.push(localEntry);
-            localStorage.setItem('rekap_uang_v3', JSON.stringify(entries));
+            localStorage.setItem('rekap_uang_v4', JSON.stringify(entries));
 
-            // Kirim ke Google Sheets jika URL tersedia
-            if (SCRIPT_URL && SCRIPT_URL.startsWith('http')) {
-                statusEl.innerText = "☁️ Mengirim ke Google Sheets...";
+            // Kirim ke Cloud jika ada URL
+            if (SCRIPT_URL) {
+                statusEl.innerText = "☁️ Menghubungkan ke Sheets...";
                 statusEl.classList.remove('hidden', 'text-red-500', 'text-green-600');
-                statusEl.classList.add('text-gray-500');
-                
                 try {
                     const params = new URLSearchParams();
-                    // Ini akan diterima sebagai e.parameter di Apps Script
                     for (const key in newEntry) params.append(key, newEntry[key]);
-
-                    // Gunakan mode no-cors untuk menghindari blokir CORS (umum di Apps Script)
-                    await fetch(SCRIPT_URL, { 
-                        method: 'POST', 
-                        body: params, 
-                        mode: 'no-cors'
-                    });
-                    
-                    statusEl.innerText = "✅ Berhasil Masuk Database!";
-                    statusEl.classList.replace('text-gray-500', 'text-green-600');
-                    setTimeout(() => statusEl.classList.add('hidden'), 5000);
+                    await fetch(SCRIPT_URL, { method: 'POST', body: params, mode: 'no-cors' });
+                    statusEl.innerText = "✅ Data Berhasil Sinkron!";
+                    statusEl.classList.add('text-green-600');
+                    setTimeout(() => statusEl.classList.add('hidden'), 3000);
                 } catch (e) {
-                    console.error(e);
-                    statusEl.innerText = "❌ Gagal Sinkron. Cek Koneksi/URL.";
-                    statusEl.classList.replace('text-gray-500', 'text-red-500');
+                    statusEl.innerText = "❌ Gagal Sinkron Cloud.";
+                    statusEl.classList.add('text-red-500');
                 }
-            } else {
-                document.getElementById('alert-no-url').classList.remove('hidden');
-                setTimeout(() => document.getElementById('alert-no-url').classList.add('hidden'), 5000);
             }
 
             // Reset UI
             document.getElementById('input-amount').value = '';
+            document.getElementById('math-preview').innerText = '';
             document.getElementById('input-desc-manual').value = '';
             btnSubmit.disabled = false;
             btnSubmit.innerText = "Simpan Data (Enter)";
             render();
-            document.getElementById('input-amount').focus();
         }
 
         function render() {
             const listContainer = document.getElementById('list-history');
             listContainer.innerHTML = '';
-            const filtered = entries.filter(e => e.type === currentTab);
-            let inSum = 0, outSum = 0;
             const now = new Date();
+            
+            // Filter hanya bulan ini untuk performa
+            const filtered = entries.filter(e => {
+                const d = new Date(e.date);
+                return e.type === currentTab && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            });
 
-            // Check URL on load
-            if (!SCRIPT_URL) document.getElementById('alert-no-url').classList.remove('hidden');
+            let inSum = 0, outSum = 0;
 
             filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(entry => {
-                const d = new Date(entry.date);
-                // Hanya hitung saldo bulan ini
-                if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-                    if (entry.flow === 'Masuk') inSum += entry.amount; else outSum += entry.amount;
-                }
-                
                 const isIn = entry.flow === 'Masuk';
+                if (isIn) inSum += entry.amount; else outSum += entry.amount;
+                
+                const d = new Date(entry.date);
                 const el = document.createElement('div');
                 el.className = "bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center";
                 el.innerHTML = `
@@ -271,7 +344,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-bold text-gray-800">${entry.description}</p>
-                            <p class="text-[10px] text-gray-400">${d.toLocaleDateString('id-ID')} • ${entry.source}</p>
+                            <p class="text-[10px] text-gray-400">${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()} • ${entry.source}</p>
                         </div>
                     </div>
                     <div class="text-right">
@@ -290,25 +363,35 @@
         }
 
         function deleteItem(id) {
-            if(confirm("Hapus data dari riwayat lokal? (Ini tidak menghapus data di Google Sheets)")) {
+            if(confirm("Hapus dari riwayat lokal?")) {
                 entries = entries.filter(e => e.id !== id);
-                localStorage.setItem('rekap_uang_v3', JSON.stringify(entries));
+                localStorage.setItem('rekap_uang_v4', JSON.stringify(entries));
                 render();
             }
         }
 
+        function clearLocalData() {
+            if(confirm("PERINGATAN: Ini akan menghapus SEMUA riwayat lokal. Lanjutkan?")) {
+                entries = [];
+                localStorage.setItem('rekap_uang_v4', JSON.stringify(entries));
+                render();
+                toggleSettings();
+            }
+        }
+
         function downloadPDF() {
-            if (entries.length === 0) return alert("Data kosong.");
+            if (entries.length === 0) return;
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.text("Laporan Rekap Uang - " + currentTab.toUpperCase(), 14, 15);
-            const rows = entries.filter(e => e.type === currentTab).map(e => [
-                new Date(e.date).toLocaleDateString(), e.flow.toUpperCase(), e.description, e.source, formatRupiah(e.amount)
+            doc.text("Laporan Keuangan " + currentTab.toUpperCase(), 14, 15);
+            const data = entries.filter(e => e.type === currentTab).map(e => [
+                new Date(e.date).toLocaleString(), e.flow, e.description, e.source, formatRupiah(e.amount)
             ]);
-            doc.autoTable({ head: [['Tgl', 'Arus', 'Ket', 'Src', 'Nominal']], body: rows, startY: 20 });
+            doc.autoTable({ head: [['Waktu', 'Tipe', 'Ket', 'Src', 'Nominal']], body: data, startY: 20 });
             doc.save(`rekap_${currentTab}.pdf`);
         }
 
+        // Inisialisasi
         updateOptions();
         render();
     </script>
