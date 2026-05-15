@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rekap Uang Pro - Calculator Edition</title>
+    <title>Rekap Uang Pro - Numpad Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -14,9 +14,6 @@
             background-color: #f8fafc;
             overscroll-behavior-y: contain;
         }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        
         .tab-active { background-color: white; color: #4f46e5; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         
         .marquee-container {
@@ -24,315 +21,257 @@
             white-space: nowrap;
             background: #f1f5f9;
             border-bottom: 1px solid #e2e8f0;
-            padding: 10px 0;
-            display: flex;
+            padding: 8px 0;
         }
         .marquee-text {
             display: inline-block;
             padding-left: 100%;
             animation: marquee 20s linear infinite;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 800;
             text-transform: uppercase;
             color: #6366f1;
-            letter-spacing: 0.5px;
         }
         @keyframes marquee {
             0% { transform: translate(0, 0); }
             100% { transform: translate(-100%, 0); }
         }
 
-        /* Responsive adjustments for rotated screen */
-        @media (orientation: landscape) and (max-height: 500px) {
-            header { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
-            .total-card { padding: 0.75rem !important; }
-            .main-grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+        /* Numpad Styling */
+        .numpad-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
         }
-
-        .calc-btn {
-            @apply flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-xl transition-all active:scale-90 text-lg;
+        .btn-numpad {
+            @apply flex items-center justify-center h-14 md:h-16 bg-white border border-slate-200 rounded-2xl text-xl font-black text-slate-700 active:bg-indigo-600 active:text-white transition-all shadow-sm;
+        }
+        .btn-op {
+            @apply bg-slate-100 text-indigo-600;
+        }
+        .btn-action {
+            @apply bg-indigo-600 text-white border-none;
+        }
+        
+        @media (orientation: landscape) and (max-height: 500px) {
+            .numpad-grid { grid-template-columns: repeat(8, 1fr); }
+            .btn-numpad { h-12; }
         }
     </style>
 </head>
 <body class="text-gray-900 antialiased h-screen flex flex-col overflow-hidden">
 
-    <!-- Header Section -->
-    <header class="bg-indigo-600 text-white p-4 md:p-6 shrink-0 shadow-lg z-10">
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white p-4 shrink-0 shadow-lg z-10">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             <div class="flex flex-col">
-                <p id="display-date" class="text-[10px] md:text-xs uppercase tracking-widest font-black opacity-70">Memuat...</p>
-                <h1 id="display-time" class="text-2xl md:text-4xl font-black tracking-tighter">00:00:00</h1>
+                <p id="display-date" class="text-[10px] uppercase tracking-widest font-black opacity-70">Memuat...</p>
+                <h1 id="display-time" class="text-xl md:text-2xl font-black">00:00:00</h1>
             </div>
-            
-            <div class="flex items-center gap-3">
-                <div class="hidden sm:flex rounded-xl bg-indigo-700/50 p-1 backdrop-blur-md mr-4">
-                    <button id="tab-pribadi-d" onclick="switchTab('pribadi')" class="px-6 py-2 text-xs font-bold rounded-lg transition-all tab-active">Pribadi</button>
-                    <button id="tab-kantor-d" onclick="switchTab('kantor')" class="px-6 py-2 text-xs font-bold rounded-lg transition-all">Kantor</button>
-                    <button id="tab-laporan-d" onclick="switchTab('laporan')" class="px-6 py-2 text-xs font-bold rounded-lg transition-all">Laporan</button>
-                </div>
-                <button onclick="toggleSettings()" class="p-3 bg-indigo-500 rounded-2xl hover:bg-indigo-400 transition-all shadow-md active:scale-90">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                    </svg>
+            <div class="flex gap-2">
+                <button id="tab-pribadi-d" onclick="switchTab('pribadi')" class="px-4 py-2 text-[10px] font-bold rounded-lg transition-all tab-active">Pribadi</button>
+                <button id="tab-kantor-d" onclick="switchTab('kantor')" class="px-4 py-2 text-[10px] font-bold rounded-lg transition-all">Kantor</button>
+                <button onclick="toggleSettings()" class="p-2 bg-indigo-500 rounded-xl hover:bg-indigo-400 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 </button>
             </div>
-        </div>
-
-        <!-- Mobile Tabs -->
-        <div class="sm:hidden flex rounded-xl bg-indigo-800/40 p-1 mt-4">
-            <button id="tab-pribadi-m" onclick="switchTab('pribadi')" class="flex-1 py-2.5 text-[10px] font-black rounded-lg transition-all tab-active uppercase">Pribadi</button>
-            <button id="tab-kantor-m" onclick="switchTab('kantor')" class="flex-1 py-2.5 text-[10px] font-black rounded-lg transition-all uppercase">Kantor</button>
-            <button id="tab-laporan-m" onclick="switchTab('laporan')" class="flex-1 py-2.5 text-[10px] font-black rounded-lg transition-all uppercase">Laporan</button>
         </div>
     </header>
 
     <!-- Marquee -->
     <div class="marquee-container shrink-0">
-        <div class="marquee-text" id="running-text-display">
-            ⚠️ Pastikan semua transaksi hari ini sudah masuk rekapan • Cek saldo berkala
-        </div>
+        <div class="marquee-text" id="running-text-display">Rekap Uang Pro Numpad Edition • Ketik nominal dengan mudah menggunakan tombol angka</div>
     </div>
 
     <!-- Main Content -->
     <main class="flex-1 overflow-hidden relative">
-        <div id="scroll-area" class="h-full overflow-y-auto px-4 py-6">
-            <div class="max-w-6xl mx-auto main-grid grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div id="scroll-area" class="h-full overflow-y-auto px-4 py-4">
+            <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
-                <!-- Left Side: Input & Stats -->
-                <div id="input-section" class="lg:col-span-5 xl:col-span-4 space-y-6">
-                    <!-- Dashboard Cards -->
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="col-span-2 total-card bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 rounded-3xl text-white shadow-xl">
-                            <p class="text-[10px] font-black uppercase opacity-70 mb-1">Estimasi Total Saldo</p>
-                            <h2 id="sum-saldo" class="text-3xl md:text-4xl font-black tracking-tight">Rp 0</h2>
-                        </div>
-                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                            <p class="text-[9px] text-green-500 font-black uppercase mb-1">Pemasukan</p>
-                            <h3 id="sum-masuk" class="text-base font-bold text-slate-800">Rp 0</h3>
-                        </div>
-                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                            <p class="text-[9px] text-red-500 font-black uppercase mb-1">Pengeluaran</p>
-                            <h3 id="sum-keluar" class="text-base font-bold text-slate-800">Rp 0</h3>
-                        </div>
+                <!-- Input Section -->
+                <div class="lg:col-span-5 space-y-4">
+                    <div class="bg-indigo-600 p-5 rounded-3xl text-white shadow-xl">
+                        <p class="text-[9px] font-black uppercase opacity-60 mb-1">Total Saldo (Estimasi)</p>
+                        <h2 id="sum-saldo" class="text-3xl font-black">Rp 0</h2>
                     </div>
 
-                    <!-- Input Form -->
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                        <!-- Mode Toggle -->
                         <div class="flex p-1 bg-slate-100 rounded-2xl">
                             <label class="flex-1 cursor-pointer">
                                 <input type="radio" name="flow" value="keluar" class="peer sr-only" onchange="updateOptions()" checked>
-                                <div class="text-center py-3 rounded-xl peer-checked:bg-white peer-checked:text-red-600 peer-checked:shadow-sm text-[11px] font-black transition-all text-slate-500 uppercase">Keluar</div>
+                                <div class="text-center py-2.5 rounded-xl peer-checked:bg-white peer-checked:text-red-600 peer-checked:shadow-sm text-[10px] font-black transition-all text-slate-500 uppercase">Keluar</div>
                             </label>
                             <label class="flex-1 cursor-pointer">
                                 <input type="radio" name="flow" value="masuk" class="peer sr-only" onchange="updateOptions()">
-                                <div class="text-center py-3 rounded-xl peer-checked:bg-white peer-checked:text-green-600 peer-checked:shadow-sm text-[11px] font-black transition-all text-slate-500 uppercase">Masuk</div>
+                                <div class="text-center py-2.5 rounded-xl peer-checked:bg-white peer-checked:text-green-600 peer-checked:shadow-sm text-[10px] font-black transition-all text-slate-500 uppercase">Masuk</div>
                             </label>
                         </div>
 
-                        <div class="space-y-3">
-                            <div class="relative group">
-                                <input type="text" id="input-amount" inputmode="text" oninput="handleMathInput(this)" onkeyup="handleEnter(event)" placeholder="0" class="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-2xl text-2xl font-black text-slate-900 outline-none transition-all">
-                                <span class="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black text-lg">Rp</span>
-                                <div id="math-preview" class="absolute -bottom-2 right-4 text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full"></div>
+                        <!-- Main Input Area -->
+                        <div class="space-y-2">
+                            <div class="relative bg-slate-50 rounded-2xl p-4 border-2 border-transparent focus-within:border-indigo-500 transition-all">
+                                <div class="flex justify-between items-end">
+                                    <span class="text-slate-400 font-black text-lg">Rp</span>
+                                    <div id="display-numpad" class="text-3xl font-black text-slate-900 truncate text-right w-full">0</div>
+                                </div>
+                                <div id="math-formula" class="text-[10px] text-indigo-500 font-bold text-right h-4 mt-1 opacity-60"></div>
                             </div>
 
-                            <!-- Calculator Buttons -->
-                            <div class="flex gap-2">
-                                <button onclick="appendToInput('+')" class="calc-btn text-indigo-600">+</button>
-                                <button onclick="appendToInput('-')" class="calc-btn text-red-500">-</button>
-                                <button onclick="appendToInput('*')" class="calc-btn text-orange-500">×</button>
-                                <button onclick="appendToInput('/')" class="calc-btn text-blue-500">÷</button>
-                                <button onclick="clearAmount()" class="calc-btn bg-slate-800 text-white hover:bg-slate-900">C</button>
+                            <!-- THE NUMPAD -->
+                            <div class="numpad-grid">
+                                <button onclick="pressNum('7')" class="btn-numpad">7</button>
+                                <button onclick="pressNum('8')" class="btn-numpad">8</button>
+                                <button onclick="pressNum('9')" class="btn-numpad">9</button>
+                                <button onclick="pressOp('/')" class="btn-numpad btn-op">÷</button>
+                                
+                                <button onclick="pressNum('4')" class="btn-numpad">4</button>
+                                <button onclick="pressNum('5')" class="btn-numpad">5</button>
+                                <button onclick="pressNum('6')" class="btn-numpad">6</button>
+                                <button onclick="pressOp('*')" class="btn-numpad btn-op">×</button>
+                                
+                                <button onclick="pressNum('1')" class="btn-numpad">1</button>
+                                <button onclick="pressNum('2')" class="btn-numpad">2</button>
+                                <button onclick="pressNum('3')" class="btn-numpad">3</button>
+                                <button onclick="pressOp('-')" class="btn-numpad btn-op">-</button>
+                                
+                                <button onclick="pressNum('0')" class="btn-numpad">0</button>
+                                <button onclick="pressNum('000')" class="btn-numpad text-sm">.000</button>
+                                <button onclick="pressClear()" class="btn-numpad text-red-500 font-black">C</button>
+                                <button onclick="pressOp('+')" class="btn-numpad btn-op">+</button>
                             </div>
 
                             <div class="flex gap-2">
-                                <select id="input-source" class="w-1/3 p-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-xl text-xs font-black outline-none transition-all">
+                                <select id="input-source" class="w-1/3 p-4 bg-slate-50 rounded-xl text-[10px] font-black outline-none border-none">
                                     <option value="CASH">💵 CASH</option>
                                     <option value="BCA">💳 BCA</option>
                                     <option value="BRI">💳 BRI</option>
                                     <option value="BANK JATIM">💳 JATIM</option>
                                 </select>
-                                <select id="select-desc" onchange="toggleManualDesc()" class="w-2/3 p-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-xl text-xs font-black outline-none transition-all"></select>
+                                <select id="select-desc" onchange="toggleManualDesc()" class="w-2/3 p-4 bg-slate-50 rounded-xl text-[10px] font-black outline-none border-none"></select>
                             </div>
-
-                            <input type="text" id="input-desc-manual" onkeyup="handleEnter(event)" placeholder="Ketik keterangan di sini..." class="hidden w-full p-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-xl text-xs font-black outline-none transition-all">
+                            <input type="text" id="input-desc-manual" placeholder="Keterangan manual..." class="hidden w-full p-4 bg-slate-50 rounded-xl text-xs font-black outline-none border-none">
                             
-                            <button onclick="saveData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-2xl text-sm shadow-lg shadow-indigo-200 transition-all active:scale-95">SIMPAN TRANSAKSI</button>
-                            <p id="sync-status" class="text-[10px] text-center text-slate-400 font-bold"></p>
+                            <button onclick="saveData()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl text-sm shadow-lg shadow-indigo-100 active:scale-95 transition-all">SIMPAN DATA</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Side: History -->
-                <div id="history-section" class="lg:col-span-7 xl:col-span-8">
+                <!-- History Section -->
+                <div class="lg:col-span-7">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest">Riwayat Aktivitas</h2>
-                        <span id="entry-count" class="text-[10px] font-black bg-slate-200 text-slate-600 px-2 py-1 rounded-md">0 Entri</span>
+                        <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Aktivitas Hari Ini</h2>
                     </div>
-                    <div id="list-history" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
-                        <!-- History Items -->
-                    </div>
-                </div>
-
-                <!-- Report View -->
-                <div id="report-view" class="hidden col-span-full space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-indigo-50">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-lg font-black text-indigo-600 uppercase">📊 Rekap Pribadi</h3>
-                                <button onclick="downloadPDF('pribadi')" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black">EXPORT PDF</button>
-                            </div>
-                            <div id="report-summary-pribadi" class="grid grid-cols-2 gap-4"></div>
-                        </div>
-                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-purple-50">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-lg font-black text-purple-600 uppercase">🏢 Rekap Kantor</h3>
-                                <button onclick="downloadPDF('kantor')" class="bg-purple-600 text-white px-4 py-2 rounded-xl text-[10px] font-black">EXPORT PDF</button>
-                            </div>
-                            <div id="report-summary-kantor" class="grid grid-cols-2 gap-4"></div>
-                        </div>
-                    </div>
-                    <div class="bg-slate-900 p-8 rounded-3xl text-white">
-                        <h3 class="text-xs font-black text-slate-400 uppercase mb-6">Distribusi Saldo Per Akun</h3>
-                        <div id="account-balances" class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Settings Modal -->
-        <div id="settings-overlay" class="hidden absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div class="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
-                    <h2 class="text-xl font-black text-slate-800">Pengaturan Aplikasi</h2>
-                    <button onclick="toggleSettings()" class="p-2 hover:bg-slate-100 rounded-full transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="p-8 overflow-y-auto space-y-8">
-                    <div class="space-y-3">
-                        <label class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Konten Teks Berjalan</label>
-                        <textarea id="setting-running-text" oninput="updateRunningText(this.value)" class="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl text-sm font-medium outline-none h-24" placeholder="Ketik pesan pengingat di sini..."></textarea>
-                    </div>
-                    <div class="space-y-4">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Input Saldo Awal (Saldo Sekarang)</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-1">
-                                <span class="text-[9px] font-bold text-slate-400 ml-1">KAS TUNAI</span>
-                                <input type="number" id="start-cash" onchange="saveBalances()" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none">
-                            </div>
-                            <div class="space-y-1">
-                                <span class="text-[9px] font-bold text-slate-400 ml-1">BANK BCA</span>
-                                <input type="number" id="start-bca" onchange="saveBalances()" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none">
-                            </div>
-                            <div class="space-y-1">
-                                <span class="text-[9px] font-bold text-slate-400 ml-1">BANK BRI</span>
-                                <input type="number" id="start-bri" onchange="saveBalances()" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none">
-                            </div>
-                            <div class="space-y-1">
-                                <span class="text-[9px] font-bold text-slate-400 ml-1">BANK JATIM</span>
-                                <input type="number" id="start-jatim" onchange="saveBalances()" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="pt-6 border-t border-slate-100">
-                        <button onclick="clearAll()" class="w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black text-[11px] hover:bg-red-100 transition-all uppercase tracking-widest">Reset Ulang Semua Data</button>
+                    <div id="list-history" class="space-y-3">
+                        <!-- List Items -->
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
+    <!-- Settings Overlay -->
+    <div id="settings-overlay" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl">
+            <h2 class="text-xl font-black mb-6">Saldo Sekarang</h2>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div><p class="text-[9px] font-bold text-slate-400">TUNAI</p><input type="number" id="start-cash" class="w-full p-3 bg-slate-100 rounded-xl font-bold"></div>
+                <div><p class="text-[9px] font-bold text-slate-400">BCA</p><input type="number" id="start-bca" class="w-full p-3 bg-slate-100 rounded-xl font-bold"></div>
+                <div><p class="text-[9px] font-bold text-slate-400">BRI</p><input type="number" id="start-bri" class="w-full p-3 bg-slate-100 rounded-xl font-bold"></div>
+                <div><p class="text-[9px] font-bold text-slate-400">JATIM</p><input type="number" id="start-jatim" class="w-full p-3 bg-slate-100 rounded-xl font-bold"></div>
+            </div>
+            <button onclick="saveBalances()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black mb-2">UPDATE SALDO</button>
+            <button onclick="toggleSettings()" class="w-full py-4 text-slate-400 font-bold">TUTUP</button>
+        </div>
+    </div>
+
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKWnWGwyxEFgXGmlXZdDxZgIh9IGLiBS-_Grk8eb2wDaZeWnPBxXy_bRYQBvBi0dR6iw/exec';
 
         let currentTab = 'pribadi';
-        let entries = JSON.parse(localStorage.getItem('rekap_v_full_data')) || [];
-        let startBals = JSON.parse(localStorage.getItem('rekap_v_full_start')) || { CASH: 0, BCA: 0, BRI: 0, JATIM: 0 };
-        let runningText = localStorage.getItem('rekap_v_full_marquee') || "Selamat datang di Rekap Uang Pro • Selalu catat pengeluaran Anda hari ini agar keuangan tetap terpantau dengan baik • Semangat bekerja!";
+        let rawExpression = ""; 
+        let finalValue = 0;
+        let entries = JSON.parse(localStorage.getItem('rekap_numpad_data')) || [];
+        let startBals = JSON.parse(localStorage.getItem('rekap_numpad_start')) || { CASH: 0, BCA: 0, BRI: 0, JATIM: 0 };
         
         const config = {
-            pribadi: "Makan, Bensin, Parkir, Belanja, Pulsa, Listrik, Sedekah, Hiburan",
-            kantorIn: "Invoice, Gaji, Refund, Bonus, Penjualan",
-            kantorOut: "GB, Primamax, Warna, Pak Burhan, GFBABAT, IndahPrint, QueenDistro, ATK, Maintenance"
+            pribadi: "Makan, Bensin, Parkir, Belanja, Pulsa, Listrik, Sedekah",
+            kantorIn: "Invoice, Gaji, Refund, Bonus",
+            kantorOut: "GB, Primamax, Warna, Pak Burhan, GFBABAT, IndahPrint, ATK"
         };
+
+        function formatNumber(num) { return new Intl.NumberFormat('id-ID').format(num); }
 
         function updateClock() {
             const now = new Date();
             document.getElementById('display-time').innerText = now.toLocaleTimeString('id-ID', { hour12: false });
-            document.getElementById('display-date').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('display-date').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
         }
         setInterval(updateClock, 1000);
         updateClock();
 
-        function formatNumber(num) { return new Intl.NumberFormat('id-ID').format(num); }
-        function handleEnter(e) { if (e.key === "Enter") saveData(); }
-
-        function appendToInput(char) {
-            const input = document.getElementById('input-amount');
-            let val = input.value.replace(/\./g, '');
-            input.value = val + char;
-            handleMathInput(input);
+        // Numpad Logic
+        function pressNum(num) {
+            rawExpression += num;
+            updateDisplay();
         }
 
-        function clearAmount() {
-            const input = document.getElementById('input-amount');
-            input.value = "";
-            document.getElementById('math-preview').innerText = "";
-        }
-
-        function updateRunningText(val) {
-            runningText = val;
-            localStorage.setItem('rekap_v_full_marquee', val);
-            document.getElementById('running-text-display').innerText = val;
-        }
-
-        function handleMathInput(input) {
-            const preview = document.getElementById('math-preview');
-            // Allow numbers and math operators
-            let val = input.value.replace(/\./g, '').replace(/[^0-9+\-*/().]/g, '');
-            
-            if (/[+\-*/]/.test(val)) {
-                try {
-                    // Simple evaluation
-                    const res = Function('"use strict";return (' + val + ')')();
-                    if (res !== undefined && res !== null && !isNaN(res)) {
-                        preview.innerText = "= " + formatNumber(Math.round(res));
-                    }
-                } catch (e) { preview.innerText = ""; }
-                input.value = val;
+        function pressOp(op) {
+            // Avoid double operators
+            if (rawExpression === "" && op !== "-") return;
+            const lastChar = rawExpression.slice(-1);
+            if (["+", "-", "*", "/"].includes(lastChar)) {
+                rawExpression = rawExpression.slice(0, -1) + op;
             } else {
-                input.value = val ? formatNumber(val) : "";
-                preview.innerText = "";
+                rawExpression += op;
+            }
+            updateDisplay();
+        }
+
+        function pressClear() {
+            rawExpression = "";
+            finalValue = 0;
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const display = document.getElementById('display-numpad');
+            const formula = document.getElementById('math-formula');
+            
+            if (rawExpression === "") {
+                display.innerText = "0";
+                formula.innerText = "";
+                finalValue = 0;
+                return;
+            }
+
+            formula.innerText = rawExpression.replace(/\*/g, '×').replace(/\//g, '÷');
+            
+            try {
+                // Safety: remove non-math chars
+                const clean = rawExpression.replace(/[^0-9+\-*/.]/g, '');
+                const result = Function('"use strict";return (' + clean + ')')();
+                finalValue = Math.round(result || 0);
+                display.innerText = formatNumber(finalValue);
+            } catch (e) {
+                // Keep showing previous valid result if mid-expression
             }
         }
 
         function switchTab(tab) {
             currentTab = tab;
-            ['pribadi', 'kantor', 'laporan'].forEach(t => {
-                document.getElementById('tab-' + t + '-d').classList.toggle('tab-active', tab === t);
-                document.getElementById('tab-' + t + '-m').classList.toggle('tab-active', tab === t);
-            });
-            const isLaporan = tab === 'laporan';
-            document.getElementById('input-section').classList.toggle('hidden', isLaporan);
-            document.getElementById('history-section').classList.toggle('hidden', isLaporan);
-            document.getElementById('report-view').classList.toggle('hidden', !isLaporan);
-            if (isLaporan) renderReport(); else { updateOptions(); render(); }
-            document.getElementById('scroll-area').scrollTo(0, 0);
+            document.getElementById('tab-pribadi-d').classList.toggle('tab-active', tab === 'pribadi');
+            document.getElementById('tab-kantor-d').classList.toggle('tab-active', tab === 'kantor');
+            updateOptions();
+            render();
         }
 
         function toggleSettings() {
-            const overlay = document.getElementById('settings-overlay');
-            overlay.classList.toggle('hidden');
-            if (!overlay.classList.contains('hidden')) {
-                document.getElementById('start-cash').value = startBals.CASH;
-                document.getElementById('start-bca').value = startBals.BCA;
-                document.getElementById('start-bri').value = startBals.BRI;
-                document.getElementById('start-jatim').value = startBals.JATIM;
-                document.getElementById('setting-running-text').value = runningText;
-            }
+            document.getElementById('settings-overlay').classList.toggle('hidden');
+            document.getElementById('start-cash').value = startBals.CASH;
+            document.getElementById('start-bca').value = startBals.BCA;
+            document.getElementById('start-bri').value = startBals.BRI;
+            document.getElementById('start-jatim').value = startBals.JATIM;
         }
 
         function saveBalances() {
@@ -340,7 +279,8 @@
             startBals.BCA = parseFloat(document.getElementById('start-bca').value) || 0;
             startBals.BRI = parseFloat(document.getElementById('start-bri').value) || 0;
             startBals.JATIM = parseFloat(document.getElementById('start-jatim').value) || 0;
-            localStorage.setItem('rekap_v_full_start', JSON.stringify(startBals));
+            localStorage.setItem('rekap_numpad_start', JSON.stringify(startBals));
+            toggleSettings();
             render();
         }
 
@@ -359,143 +299,80 @@
             manual.classList.toggle('hidden', sel.value !== "Lain Lain");
         }
 
-        async function saveData() {
-            const inputVal = document.getElementById('input-amount').value.replace(/\./g, '');
-            let amount = 0; 
-            try { 
-                amount = Function('"use strict";return (' + inputVal + ')')() || 0; 
-            } catch(e) { return; }
-            
+        function saveData() {
+            if (finalValue <= 0) return;
             const flow = document.querySelector('input[name="flow"]:checked').value;
             const source = document.getElementById('input-source').value;
             const desc = document.getElementById('select-desc').value === "Lain Lain" ? document.getElementById('input-desc-manual').value : document.getElementById('select-desc').value;
 
-            if (!amount || !desc) return;
-            const entry = { id: Date.now().toString(), date: new Date().toISOString(), type: currentTab, flow: flow === 'masuk' ? 'Masuk' : 'Keluar', source: source, amount: Math.round(amount), description: desc };
+            if (!desc) return;
+
+            const entry = {
+                id: Date.now().toString(),
+                date: new Date().toISOString(),
+                type: currentTab,
+                flow: flow === 'masuk' ? 'Masuk' : 'Keluar',
+                source: source,
+                amount: finalValue,
+                description: desc
+            };
+
             entries.push(entry);
-            localStorage.setItem('rekap_v_full_data', JSON.stringify(entries));
+            localStorage.setItem('rekap_numpad_data', JSON.stringify(entries));
             
-            document.getElementById('input-amount').value = '';
+            pressClear();
             document.getElementById('input-desc-manual').value = '';
-            document.getElementById('math-preview').innerText = "";
             render();
-            syncToCloud(entry);
+            sync(entry);
         }
 
-        async function syncToCloud(data) {
-            const status = document.getElementById('sync-status');
-            status.innerText = "⏳ Sedang Sinkron...";
-            try {
-                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-                status.innerText = "✅ Cloud Tersimpan";
-                setTimeout(() => status.innerText = "", 2000);
-            } catch (err) { status.innerText = "❌ Mode Offline"; }
-        }
-
-        function calculateCurrentBalances() {
-            const bals = { ...startBals };
-            entries.forEach(e => {
-                const s = e.source === 'BANK JATIM' ? 'JATIM' : e.source;
-                if (e.flow === 'Masuk') bals[s] += e.amount; else bals[s] -= e.amount;
-            });
-            return bals;
+        async function sync(data) {
+            try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) }); } catch (e) {}
         }
 
         function render() {
             const list = document.getElementById('list-history');
             list.innerHTML = '';
             let filtered = entries.filter(e => e.type === currentTab);
-            let inSum = 0, outSum = 0;
-            const currentMonth = new Date().getMonth();
-
-            document.getElementById('entry-count').innerText = filtered.length + " Entri";
-
+            
             filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(e => {
                 const isMasuk = e.flow === 'Masuk';
-                if (new Date(e.date).getMonth() === currentMonth) {
-                    if (isMasuk) inSum += e.amount; else outSum += e.amount;
-                }
-                const item = document.createElement('div');
-                item.className = "bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center group hover:border-indigo-200 transition-all";
-                item.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <div class="text-[9px] font-black w-12 h-12 flex items-center justify-center rounded-2xl ${isMasuk ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">${e.source}</div>
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-2xl shadow-sm border border-slate-50 flex justify-between items-center";
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-[8px] font-black ${isMasuk ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">${e.source}</div>
                         <div>
-                            <p class="text-xs font-black text-slate-800">${e.description}</p>
-                            <p class="text-[9px] text-slate-400 font-bold">${new Date(e.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                            <p class="text-[11px] font-black text-slate-800">${e.description}</p>
+                            <p class="text-[8px] text-slate-400 font-bold">${new Date(e.date).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</p>
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm font-black ${isMasuk ? 'text-green-600' : 'text-red-600'}">${isMasuk ? '+' : '-'}${formatNumber(e.amount)}</p>
-                        <button onclick="deleteItem('${e.id}')" class="text-[9px] font-bold text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">Hapus</button>
+                        <p class="text-xs font-black ${isMasuk ? 'text-green-600' : 'text-red-600'}">${isMasuk ? '+' : '-'}${formatNumber(e.amount)}</p>
+                        <button onclick="deleteItem('${e.id}')" class="text-[8px] text-slate-300 font-black">Hapus</button>
                     </div>
                 `;
-                list.appendChild(item);
+                list.appendChild(div);
             });
 
-            const currentBals = calculateCurrentBalances();
-            const total = Object.values(currentBals).reduce((a, b) => a + b, 0);
-            document.getElementById('sum-saldo').innerText = "Rp " + formatNumber(total);
-            document.getElementById('sum-masuk').innerText = "Rp " + formatNumber(inSum);
-            document.getElementById('sum-keluar').innerText = "Rp " + formatNumber(outSum);
-        }
-
-        function renderReport() {
-            const sumPribadi = document.getElementById('report-summary-pribadi');
-            const sumKantor = document.getElementById('report-summary-kantor');
-            const accBals = document.getElementById('account-balances');
-
-            let pIn = 0, pOut = 0, kIn = 0, kOut = 0;
+            // Calc balances
+            const bals = { ...startBals };
             entries.forEach(e => {
-                if (e.type === 'pribadi') { if(e.flow === 'Masuk') pIn += e.amount; else pOut += e.amount; }
-                else { if(e.flow === 'Masuk') kIn += e.amount; else kOut += e.amount; }
+                const s = e.source === 'BANK JATIM' ? 'JATIM' : e.source;
+                if (e.flow === 'Masuk') bals[s] += e.amount; else bals[s] -= e.amount;
             });
-
-            sumPribadi.innerHTML = `
-                <div class="bg-slate-50 p-4 rounded-2xl"><p class="text-[9px] font-black text-slate-400">TOTAL MASUK</p><p class="text-base font-black text-green-600">Rp ${formatNumber(pIn)}</p></div>
-                <div class="bg-slate-50 p-4 rounded-2xl"><p class="text-[9px] font-black text-slate-400">TOTAL KELUAR</p><p class="text-base font-black text-red-600">Rp ${formatNumber(pOut)}</p></div>
-                <div class="col-span-2 bg-indigo-50 p-5 rounded-2xl"><p class="text-[9px] font-black text-indigo-400">MARGIN BERSIH</p><p class="text-xl font-black text-indigo-700">Rp ${formatNumber(pIn - pOut)}</p></div>
-            `;
-
-            sumKantor.innerHTML = `
-                <div class="bg-slate-50 p-4 rounded-2xl"><p class="text-[9px] font-black text-slate-400">TOTAL MASUK</p><p class="text-base font-black text-green-600">Rp ${formatNumber(kIn)}</p></div>
-                <div class="bg-slate-50 p-4 rounded-2xl"><p class="text-[9px] font-black text-slate-400">TOTAL KELUAR</p><p class="text-base font-black text-red-600">Rp ${formatNumber(kOut)}</p></div>
-                <div class="col-span-2 bg-purple-50 p-5 rounded-2xl"><p class="text-[9px] font-black text-purple-400">MARGIN BERSIH</p><p class="text-xl font-black text-purple-700">Rp ${formatNumber(kIn - kOut)}</p></div>
-            `;
-
-            const currentBals = calculateCurrentBalances();
-            accBals.innerHTML = Object.entries(currentBals).map(([key, val]) => `
-                <div class="p-2"><p class="text-[10px] font-black text-slate-500 mb-1 uppercase">${key}</p><p class="text-sm font-black text-white">Rp ${formatNumber(val)}</p></div>
-            `).join('');
+            const total = Object.values(bals).reduce((a, b) => a + b, 0);
+            document.getElementById('sum-saldo').innerText = "Rp " + formatNumber(total);
         }
 
         function deleteItem(id) {
-            if (confirm("Hapus catatan ini secara permanen?")) {
+            if (confirm("Hapus?")) {
                 entries = entries.filter(e => e.id !== id);
-                localStorage.setItem('rekap_v_full_data', JSON.stringify(entries));
+                localStorage.setItem('rekap_numpad_data', JSON.stringify(entries));
                 render();
             }
         }
 
-        function clearAll() {
-            if (confirm("Reset ulang semua data?")) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
-
-        function downloadPDF(type) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const title = type === 'pribadi' ? "LAPORAN KEUANGAN PRIBADI" : "LAPORAN KEUANGAN KANTOR";
-            const filteredData = entries.filter(e => e.type === type);
-            doc.setFontSize(18); doc.text(title, 14, 20);
-            const tableData = filteredData.map(e => [new Date(e.date).toLocaleDateString('id-ID'), e.flow, e.source, e.description, formatNumber(e.amount)]);
-            doc.autoTable({ head: [['Tanggal', 'Arus', 'Sumber', 'Keterangan', 'Nominal (Rp)']], body: tableData, startY: 35 });
-            doc.save(`Laporan_${type}.pdf`);
-        }
-
-        document.getElementById('running-text-display').innerText = runningText;
         updateOptions();
         render();
     </script>
