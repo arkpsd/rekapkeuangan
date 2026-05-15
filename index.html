@@ -6,9 +6,11 @@
     <title>Rekap Uang</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Load JSPDF for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        /* Hide scrollbar for clean look */
         ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
@@ -50,16 +52,13 @@
                     <h2 class="text-sm font-bold text-gray-700">Catat Transaksi Baru</h2>
                     <label class="cursor-pointer bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-200 transition shadow-sm flex items-center space-x-1">
                         <span>📷 Scan Struk (AI)</span>
-                        <!-- Input file yang bisa membuka kamera di HP atau folder di PC -->
                         <input type="file" id="input-struk" accept="image/*" capture="environment" class="hidden" onchange="processReceipt(event)">
                     </label>
                 </div>
                 
-                <!-- Status Pembacaan AI -->
                 <div id="scan-status" class="hidden text-xs font-medium mb-3 px-2 py-1.5 rounded-md"></div>
                 
                 <div class="space-y-3">
-                    <!-- Flow Toggle (Masuk / Keluar) -->
                     <div class="flex space-x-2">
                         <label class="flex-1 cursor-pointer">
                             <input type="radio" name="flow" value="keluar" class="peer sr-only" checked>
@@ -75,7 +74,6 @@
                         </label>
                     </div>
 
-                    <!-- Source (Sumber Dana) -->
                     <div>
                         <select id="input-source" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
                             <option value="CASH">💵 CASH (Tunai)</option>
@@ -85,19 +83,14 @@
                         </select>
                     </div>
 
-                    <!-- Nominal -->
                     <div>
-                        <div class="relative">
-                            <input type="text" id="input-amount" oninput="formatInputRupiah(this)" placeholder="Nominal (Rp)" class="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-gray-800">
-                        </div>
+                        <input type="text" id="input-amount" oninput="formatInputRupiah(this)" placeholder="Nominal (Rp)" class="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-gray-800">
                     </div>
                     
-                    <!-- Keterangan -->
                     <div>
                         <input type="text" id="input-desc" placeholder="Keterangan (Cth: Beli makan, Gaji)" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                     </div>
                     
-                    <!-- Submit -->
                     <button id="btn-submit" onclick="saveData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg text-sm shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         Simpan Catatan
                     </button>
@@ -109,60 +102,49 @@
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-sm font-bold text-gray-700">Riwayat Terakhir</h2>
                     <div class="flex space-x-3">
-                        <button onclick="downloadCSV()" class="text-xs text-indigo-600 font-semibold hover:text-indigo-800">📥 Download CSV</button>
+                        <button onclick="downloadPDF()" class="text-xs text-indigo-600 font-semibold hover:text-indigo-800">📄 Download PDF</button>
                         <button onclick="clearAllData()" class="text-xs text-red-500 hover:text-red-700">🗑️ Hapus</button>
                     </div>
                 </div>
-                <div id="list-history" class="space-y-2 pb-4">
-                    <!-- Items will be injected here via JS -->
-                </div>
+                <div id="list-history" class="space-y-2 pb-4"></div>
             </section>
         </div>
     </div>
 
     <script>
-        // --- KONFIGURASI DATABASE GOOGLE SHEETS ---
-        // Nanti, masukkan URL Web App Google Apps Script Anda di antara tanda kutip di bawah ini
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKWnWGwyxEFgXGmlXZdDxZgIh9IGLiBS-_Grk8eb2wDaZeWnPBxXy_bRYQBvBi0dR6iw/exec'; 
-
-        // --- STATE MANAGEMENT ---
-        let currentTab = 'pribadi'; // 'pribadi' | 'kantor'
+        // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = ''; 
+        
+        let currentTab = 'pribadi';
         let entries = JSON.parse(localStorage.getItem('rekap_uang_v2')) || [];
 
-        // --- FORMATTING HELPERS ---
         function formatRupiah(angka) {
             return 'Rp. ' + new Intl.NumberFormat('id-ID').format(angka);
         }
 
-        // Auto-format input as user types
         function formatInputRupiah(input) {
             let value = input.value.replace(/[^,\d]/g, '').toString();
             let split = value.split(',');
             let sisa = split[0].length % 3;
             let rupiah = split[0].substr(0, sisa);
             let ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-
             if (ribuan) {
                 let separator = sisa ? '.' : '';
                 rupiah += separator + ribuan.join('.');
             }
-
             rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
             input.value = rupiah ? 'Rp. ' + rupiah : '';
         }
 
-        // Clean formatting to save pure integer
         function unformatRupiah(str) {
+            if (!str) return 0;
             return parseInt(str.replace(/[^0-9]/g, '')) || 0;
         }
 
-        // --- UI LOGIC ---
         function switchTab(tab) {
             currentTab = tab;
-            
             const btnPribadi = document.getElementById('tab-pribadi');
             const btnKantor = document.getElementById('tab-kantor');
-
             if(tab === 'pribadi') {
                 btnPribadi.className = "flex-1 py-1.5 text-sm font-semibold rounded-md shadow-sm bg-white text-indigo-700 transition-all";
                 btnKantor.className = "flex-1 py-1.5 text-sm font-semibold rounded-md text-indigo-100 hover:text-white transition-all";
@@ -178,21 +160,14 @@
             const amount = unformatRupiah(amountInput);
             const desc = document.getElementById('input-desc').value;
             const source = document.getElementById('input-source').value;
-            const flow = document.querySelector('input[name="flow"]:checked').value; // 'masuk' or 'keluar'
+            const flow = document.querySelector('input[name="flow"]:checked').value;
 
-            if (!amount || amount <= 0) {
-                alert("Nominal tidak valid!");
-                return;
-            }
-            if (!desc.trim()) {
-                alert("Keterangan tidak boleh kosong!");
-                return;
-            }
+            if (!amount || amount <= 0) { alert("Nominal tidak valid!"); return; }
+            if (!desc.trim()) { alert("Keterangan tidak boleh kosong!"); return; }
 
-            // Ubah tombol jadi loading
             const btnSubmit = document.getElementById('btn-submit');
             const originalBtnText = btnSubmit.innerHTML;
-            btnSubmit.innerHTML = "⏳ Menyimpan ke Database...";
+            btnSubmit.innerHTML = "⏳ Menyimpan...";
             btnSubmit.disabled = true;
 
             const newEntry = {
@@ -205,43 +180,41 @@
                 desc: desc
             };
 
-            // 1. Simpan ke memori HP/Browser
+            // Simpan lokal dulu
             entries.push(newEntry);
             localStorage.setItem('rekap_uang_v2', JSON.stringify(entries));
 
-            // 2. Simpan ke Database Google Sheets (Jika URL sudah diisi)
-            if (SCRIPT_URL !== '') {
+            // Simpan ke Google Sheets jika SCRIPT_URL diisi
+            if (SCRIPT_URL && SCRIPT_URL !== '') {
                 try {
-                    await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(newEntry)
+                    await fetch(SCRIPT_URL, { 
+                        method: 'POST', 
+                        mode: 'no-cors', // Penting untuk Apps Script
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newEntry) 
                     });
-                    console.log("Berhasil disimpan ke database");
-                } catch (error) {
-                    console.error("Gagal mengirim ke Google Sheets:", error);
-                    // Kita tidak kasih alert agar tidak mengganggu, data tetap aman di lokal
+                } catch (error) { 
+                    console.error("Gagal sinkron ke Sheets:", error); 
                 }
             }
 
-            // Reset Form
             document.getElementById('input-amount').value = '';
             document.getElementById('input-desc').value = '';
-            
-            // Kembalikan tombol ke semula
             btnSubmit.innerHTML = originalBtnText;
             btnSubmit.disabled = false;
-
             render();
         }
 
         function deleteEntry(id) {
-            entries = entries.filter(e => e.id !== id);
-            localStorage.setItem('rekap_uang_v2', JSON.stringify(entries));
-            render();
+            if(confirm("Hapus catatan ini?")) {
+                entries = entries.filter(e => e.id !== id);
+                localStorage.setItem('rekap_uang_v2', JSON.stringify(entries));
+                render();
+            }
         }
 
         function clearAllData() {
-            if(confirm("Hapus semua catatan? Tindakan ini tidak bisa dibatalkan.")) {
+            if(confirm("Hapus semua catatan di HP ini?")) {
                 entries = [];
                 localStorage.removeItem('rekap_uang_v2');
                 render();
@@ -251,30 +224,18 @@
         function render() {
             const listContainer = document.getElementById('list-history');
             listContainer.innerHTML = '';
-
-            // Filter by Active Tab
             const filteredEntries = entries.filter(e => e.type === currentTab);
-            
-            let totalMasuk = 0;
-            let totalKeluar = 0;
-
-            // Get Current Month for Filtering Summaries
+            let totalMasuk = 0, totalKeluar = 0;
             const currentMonth = new Date().getMonth();
             const currentYear = new Date().getFullYear();
-
-            // Populate List (Newest First)
             const sortedEntries = [...filteredEntries].sort((a, b) => new Date(b.date) - new Date(a.date));
 
             sortedEntries.forEach(entry => {
                 const dateObj = new Date(entry.date);
-                
-                // Calculate Summary (Only for current month)
                 if (dateObj.getMonth() === currentMonth && dateObj.getFullYear() === currentYear) {
                     if (entry.flow === 'masuk') totalMasuk += entry.amount;
                     if (entry.flow === 'keluar') totalKeluar += entry.amount;
                 }
-
-                // Render List HTML (Menambahkan Tanggal dan Jam secara spesifik)
                 const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                 const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                 const isMasuk = entry.flow === 'masuk';
@@ -304,199 +265,139 @@
                 `;
                 listContainer.appendChild(card);
             });
-
+            
             if (sortedEntries.length === 0) {
-                listContainer.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Belum ada catatan di bagian ini.</p>`;
+                listContainer.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Belum ada catatan.</p>`;
             }
-
-            // Update Summaries
+            
             const saldo = totalMasuk - totalKeluar;
             document.getElementById('sum-saldo').innerText = formatRupiah(saldo);
             document.getElementById('sum-masuk').innerText = formatRupiah(totalMasuk);
             document.getElementById('sum-keluar').innerText = formatRupiah(totalKeluar);
         }
 
-        // --- AI RECEIPT SCANNER LOGIC ---
         async function processReceipt(event) {
             const file = event.target.files[0];
             if (!file) return;
-
-            // Tampilkan pesan loading
             const statusDiv = document.getElementById('scan-status');
             statusDiv.className = "text-xs font-medium mb-3 px-2 py-1.5 rounded-md bg-blue-100 text-blue-700 animate-pulse";
-            statusDiv.innerText = "⏳ Sedang membaca struk dengan AI... Mohon tunggu sebentar.";
+            statusDiv.innerText = "⏳ Membaca struk dengan AI...";
             statusDiv.classList.remove('hidden');
-
+            
             try {
-                // 1. Ubah file gambar menjadi format Base64
                 const base64Data = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result.split(',')[1]);
                     reader.onerror = reject;
                     reader.readAsDataURL(file);
                 });
-
-                // 2. Siapkan data untuk dikirim ke AI (Gemini Flash)
-                const payload = {
-                    contents: [
-                        {
-                            role: "user",
-                            parts: [
-                                { text: "Ekstrak informasi dari struk belanja ini. Berikan total harga akhir, dan nama toko atau rincian barang." },
-                                {
-                                    inlineData: {
-                                        mimeType: file.type,
-                                        data: base64Data
-                                    }
-                                }
-                            ]
-                        }
-                    ],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "OBJECT",
-                            properties: {
-                                amount: { type: "INTEGER", description: "Total angka/nominal belanja akhir tanpa titik koma" },
-                                desc: { type: "STRING", description: "Nama toko utama atau ringkasan barang" }
-                            },
-                            required: ["amount", "desc"]
-                        }
-                    }
-                };
-
-                const apiKey = ""; // API Key otomatis ditangani oleh sistem
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
                 
-                // 3. Panggil AI
-                const response = await fetch(apiUrl, {
+                const payload = {
+                    contents: [{ role: "user", parts: [{ text: "Ekstrak dari struk ini: total harga (amount, integer), dan nama toko/keterangan (desc)." }, { inlineData: { mimeType: file.type, data: base64Data } }] }],
+                    generationConfig: { responseMimeType: "application/json", responseSchema: { type: "OBJECT", properties: { amount: { type: "INTEGER" }, desc: { type: "STRING" } }, required: ["amount", "desc"] } }
+                };
+                
+                const apiKey = ""; // API Key otomatis ditangani lingkungan
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
-                const result = await response.json();
                 
-                // 4. Proses Hasil dari AI
-                if (result.candidates && result.candidates.length > 0) {
-                    const jsonStr = result.candidates[0].content.parts[0].text;
-                    const data = JSON.parse(jsonStr);
-
-                    // Isi otomatis (Autofill) ke dalam Form
+                const result = await response.json();
+                if (result.candidates) {
+                    const data = JSON.parse(result.candidates[0].content.parts[0].text);
                     if (data.amount) {
-                        const inputAmount = document.getElementById('input-amount');
-                        inputAmount.value = data.amount.toString();
-                        formatInputRupiah(inputAmount); // Format ke format Rp.
+                        document.getElementById('input-amount').value = data.amount.toString();
+                        formatInputRupiah(document.getElementById('input-amount'));
                     }
-                    if (data.desc) {
-                        document.getElementById('input-desc').value = data.desc;
-                    }
-                    
-                    // Ubah otomatis ke mode Pengeluaran (Keluar)
+                    if (data.desc) document.getElementById('input-desc').value = data.desc;
                     document.querySelector('input[name="flow"][value="keluar"]').checked = true;
-
-                    // Pesan sukses
                     statusDiv.className = "text-xs font-medium mb-3 px-2 py-1.5 rounded-md bg-green-100 text-green-700";
-                    statusDiv.innerText = "✅ Struk berhasil dibaca! Silakan cek kembali datanya sebelum disimpan.";
-                    
-                    setTimeout(() => { statusDiv.classList.add('hidden'); }, 5000);
-
-                } else {
-                    throw new Error("Gagal membaca struktur data.");
+                    statusDiv.innerText = "✅ Berhasil discan!";
                 }
-
             } catch (error) {
-                console.error("Error OCR:", error);
                 statusDiv.className = "text-xs font-medium mb-3 px-2 py-1.5 rounded-md bg-red-100 text-red-700";
-                statusDiv.innerText = "❌ Gagal membaca struk. Pastikan foto jelas, terang, dan merupakan struk valid.";
-                setTimeout(() => { statusDiv.classList.add('hidden'); }, 5000);
+                statusDiv.innerText = "❌ Gagal scan.";
             } finally {
-                event.target.value = ''; // Reset input agar bisa memfoto/mengupload gambar yang sama lagi jika perlu
+                setTimeout(() => statusDiv.classList.add('hidden'), 3000);
             }
         }
 
-        function downloadCSV() {
-            if (entries.length === 0) {
-                alert("Belum ada data untuk didownload.");
-                return;
-            }
+        // --- PDF GENERATION ---
+        function downloadPDF() {
+            if (entries.length === 0) { alert("Data masih kosong."); return; }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
-            // Header Kolom CSV
-            let csvContent = "Tanggal,Waktu,Dompet (Pribadi/Kantor),Arus (Masuk/Keluar),Sumber Dana,Keterangan,Nominal (Angka Murni)\n";
+            doc.setFontSize(20);
+            doc.setTextColor(79, 70, 229);
+            doc.text("Laporan Rekap Keuangan", 14, 20);
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Periode Cetak: ${today}`, 14, 28);
 
-            // Sort Lama ke Terbaru
-            const sortedEntries = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const createTableData = (type) => {
+                const data = entries.filter(e => e.type === type).sort((a,b) => new Date(a.date) - new Date(b.date));
+                let masuk = 0, keluar = 0;
+                const rows = data.map(e => {
+                    const d = new Date(e.date);
+                    if(e.flow === 'masuk') masuk += e.amount; else keluar += e.amount;
+                    return [
+                        `${d.toLocaleDateString('id-ID')} ${d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}`,
+                        e.flow === 'masuk' ? 'MASUK' : 'KELUAR',
+                        e.source,
+                        e.desc,
+                        formatRupiah(e.amount)
+                    ];
+                });
+                return { rows, summary: { masuk, keluar, saldo: masuk - keluar } };
+            };
 
-            sortedEntries.forEach(e => {
-                const d = new Date(e.date);
-                const dateStr = d.toLocaleDateString('id-ID'); 
-                const timeStr = d.toLocaleTimeString('id-ID'); 
-                const type = e.type === 'pribadi' ? 'Pribadi' : 'Kantor';
-                const flow = e.flow === 'masuk' ? 'Masuk' : 'Keluar';
-                const source = e.source;
-                const desc = `"${e.desc.replace(/"/g, '""')}"`; 
-                const amount = e.amount; // Angka murni agar mudah di SUM di Excel
+            let finalY = 35;
+            const sections = [
+                { title: "REKAP UANG PRIBADI", type: "pribadi", color: [79, 70, 229] },
+                { title: "REKAP UANG KANTOR", type: "kantor", color: [31, 41, 55] }
+            ];
 
-                csvContent += `${dateStr},${timeStr},${type},${flow},${source},${desc},${amount}\n`;
+            sections.forEach((sec, idx) => {
+                const res = createTableData(sec.type);
+                
+                doc.setFontSize(12);
+                doc.setTextColor(0);
+                doc.setFont(undefined, 'bold');
+                doc.text(sec.title, 14, finalY);
+                doc.setFont(undefined, 'normal');
+                
+                doc.autoTable({
+                    startY: finalY + 5,
+                    head: [['Waktu', 'Arus', 'Sumber', 'Keterangan', 'Nominal']],
+                    body: res.rows,
+                    theme: 'grid',
+                    headStyles: { fillColor: sec.color },
+                    styles: { fontSize: 8 }
+                });
+
+                finalY = doc.lastAutoTable.finalY + 8;
+                doc.setFontSize(9);
+                doc.text(`Total Masuk: ${formatRupiah(res.summary.masuk)}`, 14, finalY);
+                doc.text(`Total Keluar: ${formatRupiah(res.summary.keluar)}`, 14, finalY + 5);
+                doc.setFont(undefined, 'bold');
+                doc.text(`SALDO AKHIR: ${formatRupiah(res.summary.saldo)}`, 14, finalY + 11);
+                doc.setFont(undefined, 'normal');
+
+                finalY += 25;
+                if (finalY > 240 && idx < sections.length - 1) {
+                    doc.addPage();
+                    finalY = 20;
+                }
             });
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            
-            const today = new Date().toLocaleDateString('id-ID').replace(/\//g, '-');
-            const fileName = `Rekap_Keuangan_Lengkap_${today}.csv`;
-
-            if (navigator.msSaveBlob) { 
-                navigator.msSaveBlob(blob, fileName);
-            } else {
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", fileName);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+            doc.save(`Rekap_Keuangan_${today.replace(/ /g, '_')}.pdf`);
         }
 
-        // Initial Render
         render();
-
-        /*
-        ========================================================
-        PETUNJUK GOOGLE SHEETS (APPS SCRIPT)
-        ========================================================
-        Jika Anda ingin menghubungkan data ini ke Google Sheets,
-        buatlah Google Sheets baru, klik Ekstensi > Apps Script.
-        Paste kode berikut:
-
-        function doPost(e) {
-            var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-            var data = JSON.parse(e.postData.contents);
-            
-            // Format Tanggal dan Waktu dari aplikasi
-            var dateObj = new Date(data.date);
-            var tanggal = Utilities.formatDate(dateObj, "Asia/Jakarta", "dd/MM/yyyy");
-            var waktu = Utilities.formatDate(dateObj, "Asia/Jakarta", "HH:mm:ss");
-            
-            // Masukkan urutan kolom (Header Sheet Anda harus urut seperti ini: Tanggal | Jam | Tipe | Arus | Sumber | Keterangan | Nominal)
-            sheet.appendRow([
-                tanggal, 
-                waktu,
-                data.type === 'pribadi' ? 'Pribadi' : 'Kantor', 
-                data.flow === 'masuk' ? 'Masuk' : 'Keluar',
-                data.source,
-                data.desc, 
-                data.amount
-            ]);
-            
-            return ContentService.createTextOutput("Success").setMimeType(ContentService.MimeType.TEXT);
-        }
-
-        Lalu Deploy sebagai Web App, set akses ke "Anyone".
-        Setelah itu, tambahkan script fetch() di dalam fungsi saveData() pada aplikasi.
-        ========================================================
-        */
     </script>
 </body>
 </html>
